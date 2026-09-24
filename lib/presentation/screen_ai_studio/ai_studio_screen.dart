@@ -94,6 +94,10 @@ class AiStudioScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Container(
+<<<<<<< HEAD
+=======
+                  constraints: const BoxConstraints(minHeight: 140),
+>>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
                   decoration: BoxDecoration(
                     gradient: AppColors.heroBannerGradient,
                     borderRadius: BorderRadius.circular(20),
@@ -106,7 +110,11 @@ class AiStudioScreen extends StatelessWidget {
                       const Text('IDEAS • IMAGES • MAGIC', style: TextStyle(color: Colors.white54, fontSize: 10, letterSpacing: 1)),
                       const SizedBox(height: 6),
                       const Text('Create More\nwith AI', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
+<<<<<<< HEAD
                       const SizedBox(height: 14),
+=======
+                      const SizedBox(height: 12),
+>>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
                       GestureDetector(
                         onTap: () => Get.toNamed(RouteName.photoPicker),
                         child: Container(
@@ -140,6 +148,7 @@ class AiStudioScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
+<<<<<<< HEAD
                 child: GridView.builder(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -156,6 +165,9 @@ class AiStudioScreen extends StatelessWidget {
                     onTap: () => _startTool(_tools[i]),
                   ),
                 ),
+=======
+                child: _ToolGrid(tools: _tools, ctrl: ctrl),
+>>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -190,6 +202,46 @@ class AiStudioScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Rows of Expanded cells instead of a GridView: a fixed childAspectRatio
+/// can't grow with the text, so the cards overflowed at larger font scales.
+class _ToolGrid extends StatelessWidget {
+  static const _columns = 4;
+  static const _gap = 12.0;
+
+  final List<AiTool> tools;
+  final AiStudioController ctrl;
+
+  const _ToolGrid({required this.tools, required this.ctrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var r = 0; r < tools.length; r += _columns) ...[
+          if (r > 0) const SizedBox(height: _gap),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (var i = r; i < r + _columns; i++) ...[
+                if (i > r) const SizedBox(width: _gap),
+                Expanded(
+                  child: i < tools.length
+                      ? _AiToolCard(
+                          tool: tools[i],
+                          ctrl: ctrl,
+                          onTap: () => AiStudioScreen._startTool(tools[i]),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ],
     );
   }
 }
@@ -236,6 +288,7 @@ class _AiToolCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
+<<<<<<< HEAD
           Text(
             tool.name,
             textAlign: TextAlign.center,
@@ -250,6 +303,10 @@ class _AiToolCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
           ),
+=======
+          Text(tool.name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary)),
+          Text(tool.tagline, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary)),
+>>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
         ],
       ),
     );

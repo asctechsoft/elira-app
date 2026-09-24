@@ -10,12 +10,10 @@ import '../controller/create_controller.dart';
 import '../controller/profile_controller.dart';
 import '../controller/splash_controller.dart';
 import '../controller/login_controller.dart';
-import '../controller/signup_controller.dart';
 import '../controller/forgot_password_controller.dart';
 import '../presentation/screen_splash/splash_screen.dart';
 import '../presentation/screen_onboarding/onboarding_screen.dart';
 import '../presentation/screen_auth/login_screen.dart';
-import '../presentation/screen_auth/signup_screen.dart';
 import '../presentation/screen_auth/forgot_password_screen.dart';
 import '../presentation/screen_main/main_shell.dart';
 import '../presentation/screen_photo_picker/photo_picker_screen.dart';
@@ -40,12 +38,6 @@ class AppPages {
       name: RouteName.login,
       page: () => const LoginScreen(),
       binding: BindingsBuilder<void>(() { Get.put(LoginController()); }),
-      middlewares: [GuestOnlyMiddleware()],
-    ),
-    GetPage(
-      name: RouteName.signup,
-      page: () => const SignupScreen(),
-      binding: BindingsBuilder<void>(() { Get.put(SignupController()); }),
       middlewares: [GuestOnlyMiddleware()],
     ),
     // No guard: a signed-in user changing their password is legitimate.

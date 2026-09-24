@@ -7,6 +7,7 @@ import '../data/ai/ai_failure.dart';
 import '../data/ai/ai_job.dart';
 import '../data/ai/ai_service.dart';
 import '../models/data_models/ai_tool.dart';
+import '../values/feature_flags.dart';
 import 'auth_controller.dart';
 
 /// Owns AI runs and the credit balance they spend.
@@ -54,8 +55,12 @@ class AiStudioController extends GetxController {
   bool canAfford(AiTool tool) => credits >= tool.credits;
 
   /// Why this tool cannot run right now, or null when it can.
+  ///
+  /// The account and credit gates are switched off while [FeatureFlags.creditsEnabled]
+  /// is false: every tool stays reachable for the current demo/dev phase.
   AiFailureCode? blockerFor(AiTool tool) {
     if (!isConfigured) return AiFailureCode.notConfigured;
+    if (!FeatureFlags.creditsEnabled) return null;
     if (requiresAccount) return AiFailureCode.unauthorized;
     if (!canAfford(tool)) return AiFailureCode.insufficientCredits;
     return null;

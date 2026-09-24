@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/home_controller.dart';
 import '../../values/app_colors.dart';
-import '../../values/route_name.dart';
 import '../screen_home/home_screen.dart';
 import '../screen_ai_studio/ai_studio_screen.dart';
 import '../screen_create/create_screen.dart';
@@ -16,18 +15,12 @@ class MainShell extends StatelessWidget {
     final ctrl = Get.find<HomeController>();
     return Obx(() => Scaffold(
           body: IndexedStack(
-            index: ctrl.currentTabIndex.value == 1 ? 0 : ctrl.currentTabIndex.value > 1 ? ctrl.currentTabIndex.value - 1 : ctrl.currentTabIndex.value,
+            index: ctrl.currentTabIndex.value,
             children: const [HomeScreen(), AiStudioScreen(), CreateScreen(), ProfileScreen()],
           ),
           bottomNavigationBar: _BottomNav(
             currentIndex: ctrl.currentTabIndex.value,
-            onTap: (i) {
-              if (i == 1) {
-                Get.toNamed(RouteName.photoPicker);
-              } else {
-                ctrl.changeTab(i);
-              }
-            },
+            onTap: ctrl.changeTab,
           ),
         ));
   }
@@ -53,10 +46,15 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             children: [
               _NavItem(icon: Icons.home_rounded, label: 'Home', active: currentIndex == 0, onTap: () => onTap(0)),
-              _NavItem(icon: Icons.tune_rounded, label: 'Edit', active: currentIndex == 1, onTap: () => onTap(1)),
-              _NavItemAI(active: currentIndex == 2, onTap: () => onTap(2)),
-              _NavItem(icon: Icons.add_circle_outline_rounded, label: 'Create', active: currentIndex == 3, onTap: () => onTap(3)),
-              _NavItem(icon: Icons.person_outline_rounded, label: 'Me', active: currentIndex == 4, onTap: () => onTap(4)),
+              _NavItem(
+                icon: Icons.auto_awesome_rounded,
+                label: 'AI',
+                active: currentIndex == 1,
+                onTap: () => onTap(1),
+                activeGradient: const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]),
+              ),
+              _NavItem(icon: Icons.add_circle_outline_rounded, label: 'Sample', active: currentIndex == 2, onTap: () => onTap(2)),
+              _NavItem(icon: Icons.person_outline_rounded, label: 'Me', active: currentIndex == 3, onTap: () => onTap(3)),
             ],
           ),
         ),
@@ -65,74 +63,63 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
+/// Every item shares the same icon-box size and label position, so the row
+/// lines up regardless of which item (including the branded AI one) is
+/// active — a bare icon and a boxed icon previously sat at different heights.
 class _NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool active;
   final VoidCallback onTap;
 
-  const _NavItem({required this.icon, required this.label, required this.active, required this.onTap});
+  /// The AI item keeps its branded gradient when active; every other item
+  /// gets a plain tinted pill instead.
+  final Gradient? activeGradient;
+
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+    this.activeGradient,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final branded = activeGradient != null;
     return Expanded(
-      child: GestureDetector(
+      child: InkWell(
         onTap: onTap,
-        behavior: HitTestBehavior.opaque,
+        borderRadius: BorderRadius.circular(16),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: active ? AppColors.primary : AppColors.textHint, size: 24),
-            const SizedBox(height: 2),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              width: 44,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: active ? activeGradient : null,
+                color: active && !branded ? AppColors.primary.withValues(alpha: 0.12) : null,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                icon,
+                color: active ? (branded ? Colors.white : AppColors.primary) : AppColors.textHint,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
                 fontSize: 10,
                 color: active ? AppColors.primary : AppColors.textHint,
-                fontWeight: active ? FontWeight.w600 : FontWeight.w400,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
-            if (active)
-              Container(
-                margin: const EdgeInsets.only(top: 3),
-                width: 4,
-                height: 4,
-                decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItemAI extends StatelessWidget {
-  final bool active;
-  final VoidCallback onTap;
-
-  const _NavItemAI({required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        behavior: HitTestBehavior.opaque,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                gradient: active ? const LinearGradient(colors: [AppColors.gradientStart, AppColors.gradientEnd]) : null,
-                color: active ? null : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(Icons.auto_awesome, color: active ? Colors.white : AppColors.textHint, size: 22),
-            ),
-            const SizedBox(height: 2),
-            Text('AI', style: TextStyle(fontSize: 10, color: active ? AppColors.primary : AppColors.textHint, fontWeight: active ? FontWeight.w600 : FontWeight.w400)),
           ],
         ),
       ),

@@ -112,19 +112,22 @@ void main() {
       expect(ai.lastFailure.value?.code, AiFailureCode.notConfigured);
     });
 
-    test('a guest is asked to make an account instead of spending', () async {
+    // FeatureFlags.creditsEnabled is off for the current demo/dev phase, so
+    // blockerFor skips the account and balance checks below even though
+    // requiresAccount/canAfford themselves still report the real state.
+    test('a guest can run tools while the credit gate is disabled', () async {
       await signInAsGuest();
       final service = FakeAiService();
       final ai = AiStudioController(service: service, auth: authController);
 
       expect(ai.requiresAccount, isTrue);
+      expect(ai.blockerFor(AiTools.enhance), isNull);
       await ai.run(AiTools.enhance, imagePath: source.path);
 
-      expect(service.requests, isEmpty);
-      expect(ai.lastFailure.value?.code, AiFailureCode.unauthorized);
+      expect(service.requests, isNotEmpty);
     });
 
-    test('an empty balance is refused locally, not by the server', () async {
+    test('an empty balance does not block a run while the credit gate is disabled', () async {
       await signIn();
       final service = FakeAiService();
       final ai = AiStudioController(service: service, auth: authController);
@@ -135,11 +138,10 @@ void main() {
         credits: 9999,
       );
 
+      expect(ai.canAfford(expensive), isFalse);
       await ai.run(expensive, imagePath: source.path);
 
-      expect(service.requests, isEmpty,
-          reason: 'uploading a photo we know will be rejected wastes the upload');
-      expect(ai.lastFailure.value?.code, AiFailureCode.insufficientCredits);
+      expect(service.requests, isNotEmpty);
     });
 
     test('a prompt tool with no prompt never leaves the app', () async {

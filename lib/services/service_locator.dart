@@ -14,6 +14,7 @@ import '../data/user/firestore_user_repository.dart';
 import '../data/user/in_memory_user_repository.dart';
 import '../data/user/user_repository.dart';
 import '../values/ai_config.dart';
+import '../values/feature_flags.dart';
 
 /// Wires the auth stack. When no Firebase config has been provisioned yet
 /// (`google-services.json` / `GoogleService-Info.plist` are gitignored and
@@ -54,10 +55,12 @@ class ServiceLocator {
     _registerAi();
   }
 
-  /// A build with no `ELIRA_AI_ENDPOINT` gets a service that reports itself as
-  /// unconfigured, so the UI says "not connected" up front instead of letting
-  /// every run spin and then fail. No provider key is ever read here — spec 25
-  /// keeps those server-side (see [AiConfig]).
+  /// A build with no `ELIRA_AI_ENDPOINT` normally gets a service that reports
+  /// itself as unconfigured, so the UI says "not connected" up front instead
+  /// of letting every run spin and then fail. While [FeatureFlags.creditsEnabled]
+  /// is off for the current demo/dev phase, it simulates locally instead so
+  /// every tool stays usable without a real backend. No provider key is ever
+  /// read here either way — spec 25 keeps those server-side (see [AiConfig]).
   static void _registerAi() {
     if (Get.isRegistered<AiService>()) return;
     if (AiConfig.isConfigured) {
@@ -65,6 +68,9 @@ class ServiceLocator {
         EliraAiService(auth: Get.find<AuthService>()),
         permanent: true,
       );
+    } else if (!FeatureFlags.creditsEnabled) {
+      debugPrint('[elira] No ELIRA_AI_ENDPOINT: simulating AI tools locally.');
+      Get.put<AiService>(FakeAiService(configured: true), permanent: true);
     } else {
       debugPrint('[elira] No ELIRA_AI_ENDPOINT: cloud AI is inactive.');
       Get.put<AiService>(FakeAiService(configured: false), permanent: true);

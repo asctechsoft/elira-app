@@ -22,8 +22,6 @@ class AppStrings {
   // Onboarding
   static const skip = 'Skip';
   static const getStarted = 'Get Started';
-  static const alreadyHaveAccount = 'Already have an account?';
-  static const logInAction = 'Log in';
 
   // Login
   static const loginTitle = 'Welcome back';
@@ -34,20 +32,11 @@ class AppStrings {
   static const passwordHint = 'At least $_minPw characters';
   static const forgotPassword = 'Forgot password?';
   static const logIn = 'Log in';
-  static const noAccount = "Don't have an account?";
-  static const signUpAction = 'Sign up';
+  static const orContinueWith = 'Or continue with';
 
-  // Signup
-  static const signupTitle = 'Create your account';
-  static const signupSubtitle = 'Save your edits, sync presets and collect AI credits.';
-  static const signupTitleUpgrade = 'Keep your work';
-  static const signupSubtitleUpgrade =
-      'Create an account to keep your credits, drafts and presets on this device and beyond.';
+  // Shared with the profile "edit name" sheet.
   static const nameLabel = 'Name';
   static const nameHint = 'How should we call you?';
-  static const confirmPasswordLabel = 'Confirm password';
-  static const acceptTerms = 'I agree to the Terms of Service and Privacy Policy';
-  static const createAccount = 'Create account';
 
   // Forgot password
   static const forgotTitle = 'Reset your password';

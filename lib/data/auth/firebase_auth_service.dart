@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'auth_failure.dart';
 import 'auth_service.dart';
 import 'auth_user.dart';
+import 'social_provider.dart';
 
 class FirebaseAuthService implements AuthService {
   FirebaseAuthService(this._auth);
@@ -81,6 +82,45 @@ class FirebaseAuthService implements AuthService {
       await linked.user?.reload();
       return _require(_auth.currentUser ?? linked.user);
     });
+  }
+
+  @override
+  Future<AuthUser> signInWithSocial(SocialAuthProvider provider) {
+    return _guard(() async {
+      final cred = await _auth.signInWithProvider(_providerFor(provider));
+      return _require(cred.user);
+    });
+  }
+
+  @override
+  Future<AuthUser> linkAnonymousToSocial(SocialAuthProvider provider) {
+    return _guard(() async {
+      final user = _auth.currentUser;
+      if (user == null || !user.isAnonymous) {
+        throw const AuthFailure(
+          AuthFailureCode.unknown,
+          debugMessage: 'linkAnonymousToSocial called without an anonymous session',
+        );
+      }
+      final linked = await user.linkWithProvider(_providerFor(provider));
+      return _require(_auth.currentUser ?? linked.user);
+    });
+  }
+
+  /// TikTok has no built-in Firebase provider; `oidc.tiktok` must be added as a
+  /// custom OpenID Connect provider in the Firebase console (Authentication ->
+  /// Sign-in method -> Add new provider) before this succeeds. Until then,
+  /// Firebase itself returns operation-not-allowed, which the UI already
+  /// surfaces as "This sign-in method is not enabled."
+  AuthProvider _providerFor(SocialAuthProvider provider) {
+    switch (provider) {
+      case SocialAuthProvider.google:
+        return GoogleAuthProvider();
+      case SocialAuthProvider.facebook:
+        return FacebookAuthProvider();
+      case SocialAuthProvider.tiktok:
+        return OAuthProvider('oidc.tiktok');
+    }
   }
 
   @override

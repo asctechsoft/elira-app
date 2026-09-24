@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controller/profile_controller.dart';
 import '../../values/app_colors.dart';
 import '../../values/app_strings.dart';
+import '../../values/feature_flags.dart';
 import 'widgets/edit_profile_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -90,13 +91,13 @@ class ProfileScreen extends StatelessWidget {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: ctrl.isGuest ? ctrl.goToSignup : () => EditProfileSheet.show(ctrl),
+                                onTap: ctrl.isGuest ? ctrl.goToLogin : () => EditProfileSheet.show(ctrl),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                                   decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
                                   child: Row(
                                     children: [
-                                      Text(ctrl.isGuest ? AppStrings.signUpAction : AppStrings.editProfile,
+                                      Text(ctrl.isGuest ? AppStrings.logIn : AppStrings.editProfile,
                                           style: const TextStyle(color: AppColors.surface, fontWeight: FontWeight.w700, fontSize: 12)),
                                       const SizedBox(width: 4),
                                       const Icon(Icons.arrow_forward, color: AppColors.surface, size: 12),
@@ -104,21 +105,6 @@ class ProfileScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                          if (ctrl.isGuest) ...[
-                            const SizedBox(height: 14),
-                            _GuestCta(onTap: ctrl.goToSignup),
-                          ],
-                          const Divider(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _StatItem(value: '${ctrl.projectCount}', label: 'Projects', icon: Icons.layers_outlined),
-                              Container(width: 1, height: 40, color: AppColors.cardBg),
-                              _StatItem(value: '${ctrl.favoriteCount}', label: 'Favorites', icon: Icons.favorite_outline, iconColor: AppColors.error),
-                              Container(width: 1, height: 40, color: AppColors.cardBg),
-                              _StatItem(value: '${ctrl.aiCredits}', label: 'AI Credits', icon: Icons.auto_awesome, iconColor: AppColors.proAccent),
                             ],
                           ),
                         ],
@@ -174,8 +160,8 @@ class ProfileScreen extends StatelessWidget {
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                   child: Column(
                     children: [
-                      const _SettingsRow(icon: Icons.auto_awesome, label: 'AI Credits', sub: 'View usage and get more credits', color: AppColors.secondary),
-                      const _SettingsRow(icon: Icons.workspace_premium, label: 'Subscription', sub: 'Manage your plan and benefits', color: AppColors.proAccent),
+                      if (FeatureFlags.creditsEnabled)
+                        const _SettingsRow(icon: Icons.auto_awesome, label: 'AI Credits', sub: 'View usage and get more credits', color: AppColors.secondary),
                       const _SettingsRow(icon: Icons.notifications_none, label: 'Notifications', sub: 'Choose what to be notified about', color: AppColors.error),
                       const _SettingsRow(icon: Icons.settings_outlined, label: 'Settings', sub: 'App preferences and personalisation', color: AppColors.primary),
                       const _SettingsRow(icon: Icons.help_outline, label: 'Help Center', sub: 'Get support and find answers', color: AppColors.success),
@@ -202,30 +188,6 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color iconColor;
-
-  const _StatItem({required this.value, required this.label, required this.icon, this.iconColor = AppColors.primary});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Icon(icon, size: 16, color: iconColor),
-            const SizedBox(width: 4),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)),
-          ],
-        ),
-        Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-      ],
-    );
-  }
-}
 
 class _LibCard extends StatelessWidget {
   final IconData icon;
@@ -304,42 +266,6 @@ class _SettingsRow extends StatelessWidget {
         ),
         if (!isLast) const Divider(height: 1, indent: 64),
       ],
-    );
-  }
-}
-
-/// Where an anonymous guest converts. Placing it on Profile rather than behind
-/// a modal keeps the upgrade path visible without interrupting editing.
-class _GuestCta extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _GuestCta({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.actionAiMagic,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.cloud_upload_outlined, size: 18, color: AppColors.secondary),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Create a free account to keep your credits and drafts safe.',
-                style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.35),
-              ),
-            ),
-            const Icon(Icons.chevron_right, size: 18, color: AppColors.secondary),
-          ],
-        ),
-      ),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../controller/ai_studio_controller.dart';
 import '../../models/data_models/ai_tool.dart';
 import '../../values/app_colors.dart';
+import '../../values/feature_flags.dart';
 import '../../values/route_name.dart';
 import '../common_components/section_header.dart';
 
@@ -60,28 +61,29 @@ class AiStudioScreen extends StatelessWidget {
                         const Text('More creativity. Less limits.', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),
-                    Obx(() => Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
-                              const SizedBox(width: 4),
-                              Text('${ctrl.credits} Credits',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                              const SizedBox(width: 6),
-                              Container(
-                                width: 18,
-                                height: 18,
-                                decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
-                                child: const Icon(Icons.add, color: Colors.white, size: 12),
-                              ),
-                            ],
-                          ),
-                        )),
+                    if (FeatureFlags.creditsEnabled)
+                      Obx(() => Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
+                                const SizedBox(width: 4),
+                                Text('${ctrl.credits} Credits',
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 18,
+                                  height: 18,
+                                  decoration: const BoxDecoration(color: Colors.white24, shape: BoxShape.circle),
+                                  child: const Icon(Icons.add, color: Colors.white, size: 12),
+                                ),
+                              ],
+                            ),
+                          )),
                   ],
                 ),
               ),
@@ -92,19 +94,19 @@ class AiStudioScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Container(
-                  height: 140,
                   decoration: BoxDecoration(
                     gradient: AppColors.heroBannerGradient,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   padding: const EdgeInsets.all(20),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('IDEAS • IMAGES • MAGIC', style: TextStyle(color: Colors.white54, fontSize: 10, letterSpacing: 1)),
                       const SizedBox(height: 6),
                       const Text('Create More\nwith AI', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
-                      const Spacer(),
+                      const SizedBox(height: 14),
                       GestureDetector(
                         onTap: () => Get.toNamed(RouteName.photoPicker),
                         child: Container(
@@ -145,7 +147,7 @@ class AiStudioScreen extends StatelessWidget {
                     crossAxisCount: 4,
                     mainAxisSpacing: 12,
                     crossAxisSpacing: 12,
-                    childAspectRatio: 0.85,
+                    childAspectRatio: 0.7,
                   ),
                   itemCount: _tools.length,
                   itemBuilder: (_, i) => _AiToolCard(
@@ -216,25 +218,38 @@ class _AiToolCard extends StatelessWidget {
                 child: Icon(decor.$1, color: decor.$3, size: 26),
               ),
               // The price belongs on the tool, not buried a screen later.
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.textPrimary,
-                    borderRadius: BorderRadius.circular(8),
+              if (FeatureFlags.creditsEnabled)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.textPrimary,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text('${tool.credits}',
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                   ),
-                  child: Text('${tool.credits}',
-                      style: const TextStyle(
-                          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
                 ),
-              ),
             ],
           ),
           const SizedBox(height: 6),
-          Text(tool.name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary)),
-          Text(tool.tagline, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary)),
+          Text(
+            tool.name,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary),
+          ),
+          Text(
+            tool.tagline,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
+          ),
         ],
       ),
     );

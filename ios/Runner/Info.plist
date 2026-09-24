@@ -66,5 +66,11 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ASC Photo AI needs access to your photos so you can pick an image to edit.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ASC Photo AI needs permission to save your edited photos back to your library.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>ASC Photo AI needs camera access so you can take a photo to edit.</string>
 </dict>
 </plist>

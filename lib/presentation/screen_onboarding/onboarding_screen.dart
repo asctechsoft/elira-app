@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/onboarding_controller.dart';
 import '../../values/app_colors.dart';
-import '../../values/route_name.dart';
+import '../../values/app_strings.dart';
 import '../common_components/primary_button.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -51,8 +51,8 @@ class OnboardingScreen extends StatelessWidget {
                       ],
                     ),
                     GestureDetector(
-                      onTap: () => Get.offAllNamed(RouteName.main),
-                      child: const Text('Skip',
+                      onTap: ctrl.onSkip,
+                      child: const Text(AppStrings.skip,
                           style: TextStyle(
                               color: AppColors.textSecondary, fontSize: 15)),
                     ),
@@ -119,11 +119,33 @@ class OnboardingScreen extends StatelessWidget {
                   )),
               // Get Started button
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-                child: PrimaryButton(
-                  label: 'Get Started',
-                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                  onTap: () => Get.offAllNamed(RouteName.main),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Obx(() => PrimaryButton(
+                      label: AppStrings.getStarted,
+                      icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                      isLoading: ctrl.auth.isBusy.value,
+                      onTap: ctrl.onGetStarted,
+                    )),
+              ),
+              // A fresh install previously had no route to /login at all.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      AppStrings.alreadyHaveAccount,
+                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                    ),
+                    TextButton(
+                      onPressed: ctrl.onLogIn,
+                      child: const Text(
+                        AppStrings.logInAction,
+                        style: TextStyle(
+                            color: AppColors.primary, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

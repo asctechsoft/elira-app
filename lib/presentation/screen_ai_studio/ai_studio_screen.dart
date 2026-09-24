@@ -1,22 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/ai_studio_controller.dart';
+import '../../models/data_models/ai_tool.dart';
 import '../../values/app_colors.dart';
+import '../../values/route_name.dart';
 import '../common_components/section_header.dart';
 
 class AiStudioScreen extends StatelessWidget {
   const AiStudioScreen({super.key});
 
-  static const _tools = [
-    _AiTool('ai_enhance', 'AI Enhance', 'Sharper & clearer', Icons.auto_fix_high, Color(0xFFDCFAF0), Color(0xFF00B37E)),
-    _AiTool('remove_bg', 'Remove BG', 'Clean & precise', Icons.cleaning_services, Color(0xFFFFECEC), Color(0xFFE53E3E)),
-    _AiTool('expand', 'Expand', 'Bigger horizons', Icons.open_in_full, Color(0xFFE8F0FF), Color(0xFF2B7EFB)),
-    _AiTool('replace', 'Replace', 'Swap anything', Icons.find_replace, Color(0xFFFFF3DC), Color(0xFFF59E0B)),
-    _AiTool('relight', 'Relight', 'Perfect lighting', Icons.wb_sunny_outlined, Color(0xFFFFF3DC), Color(0xFFF59E0B)),
-    _AiTool('restore', 'Restore', 'Fix & revive', Icons.restore, Color(0xFFE0F7E0), Color(0xFF00875A)),
-    _AiTool('headshot', 'Headshot', 'Studio quality', Icons.person_outline, Color(0xFFEEEAFF), Color(0xFF6B4FDB)),
-    _AiTool('product', 'Product Studio', 'For business', Icons.storefront_outlined, Color(0xFFFFECEC), Color(0xFFE53E3E)),
-  ];
+  /// Icons and tints only. The tools themselves, their ids and their prices
+  /// come from [AiTools], so this screen and the editor cannot drift apart on
+  /// what a run costs.
+  static const _decor = <String, (IconData, Color, Color)>{
+    'ai_enhance': (Icons.auto_fix_high, Color(0xFFDCFAF0), Color(0xFF00B37E)),
+    'remove_bg': (Icons.cleaning_services, Color(0xFFFFECEC), Color(0xFFE53E3E)),
+    'expand': (Icons.open_in_full, Color(0xFFE8F0FF), Color(0xFF2B7EFB)),
+    'replace': (Icons.find_replace, Color(0xFFFFF3DC), Color(0xFFF59E0B)),
+    'relight': (Icons.wb_sunny_outlined, Color(0xFFFFF3DC), Color(0xFFF59E0B)),
+    'restore': (Icons.restore, Color(0xFFE0F7E0), Color(0xFF00875A)),
+    'headshot': (Icons.person_outline, Color(0xFFEEEAFF), Color(0xFF6B4FDB)),
+    'product': (Icons.storefront_outlined, Color(0xFFFFECEC), Color(0xFFE53E3E)),
+  };
+
+  static List<AiTool> get _tools =>
+      AiTools.all.where((t) => _decor.containsKey(t.id)).toList();
+
+  /// A tool needs a photo before it can do anything, so choosing one here
+  /// sends the user to the picker carrying the tool id — the picker already
+  /// forwards it, and the editor already opens on the matching tab.
+  static void _startTool(AiTool tool) =>
+      Get.toNamed(RouteName.photoPicker, arguments: {'tool': tool.id});
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +70,7 @@ class AiStudioScreen extends StatelessWidget {
                             children: [
                               const Icon(Icons.auto_awesome, color: Colors.white, size: 14),
                               const SizedBox(width: 4),
-                              Text('${ctrl.credits.value} Credits',
+                              Text('${ctrl.credits} Credits',
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
                               const SizedBox(width: 6),
                               Container(
@@ -92,7 +106,7 @@ class AiStudioScreen extends StatelessWidget {
                       const Text('Create More\nwith AI', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
                       const Spacer(),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => Get.toNamed(RouteName.photoPicker),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
@@ -134,7 +148,11 @@ class AiStudioScreen extends StatelessWidget {
                     childAspectRatio: 0.85,
                   ),
                   itemCount: _tools.length,
-                  itemBuilder: (_, i) => _AiToolCard(tool: _tools[i], ctrl: ctrl),
+                  itemBuilder: (_, i) => _AiToolCard(
+                    tool: _tools[i],
+                    ctrl: ctrl,
+                    onTap: () => _startTool(_tools[i]),
+                  ),
                 ),
               ),
             ),
@@ -174,38 +192,49 @@ class AiStudioScreen extends StatelessWidget {
   }
 }
 
-class _AiTool {
-  final String id;
-  final String label;
-  final String sub;
-  final IconData icon;
-  final Color bg;
-  final Color iconColor;
-
-  const _AiTool(this.id, this.label, this.sub, this.icon, this.bg, this.iconColor);
-}
-
 class _AiToolCard extends StatelessWidget {
-  final _AiTool tool;
+  final AiTool tool;
   final AiStudioController ctrl;
+  final VoidCallback onTap;
 
-  const _AiToolCard({required this.tool, required this.ctrl});
+  const _AiToolCard({required this.tool, required this.ctrl, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final decor = AiStudioScreen._decor[tool.id]!;
     return GestureDetector(
-      onTap: () => ctrl.runTool(tool.id),
+      onTap: onTap,
       child: Column(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(color: tool.bg, borderRadius: BorderRadius.circular(14)),
-            child: Icon(tool.icon, color: tool.iconColor, size: 26),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: decor.$2, borderRadius: BorderRadius.circular(14)),
+                child: Icon(decor.$1, color: decor.$3, size: 26),
+              ),
+              // The price belongs on the tool, not buried a screen later.
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.textPrimary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text('${tool.credits}',
+                      style: const TextStyle(
+                          color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
-          Text(tool.label, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary)),
-          Text(tool.sub, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary)),
+          Text(tool.name, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary)),
+          Text(tool.tagline, textAlign: TextAlign.center, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary)),
         ],
       ),
     );

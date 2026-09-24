@@ -1,0 +1,41 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+
+      // The signup grant is pinned here so a tampered client cannot mint
+      // credits or hand itself a paid tier at creation time.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.credits.balance == 30
+        && request.resource.data.credits.lifetimeGranted == 30
+        && request.resource.data.credits.lifetimeSpent == 0
+        && request.resource.data.subscription.tier == 'free'
+        && request.resource.data.subscription.status == 'none'
+        && request.resource.data.stats.projects == 0
+        && request.resource.data.stats.favorites == 0
+        && request.resource.data.stats.exports == 0
+        && request.resource.data.stats.aiRuns == 0
+        && request.resource.data.stats.presets == 0
+        && request.resource.data.schemaVersion == 1;
+
+      // After creation the client owns only presentation fields. credits,
+      // subscription and stats are server-only: anything that moves them runs
+      // in a Cloud Function or the backend, never in the app.
+      allow update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['displayName', 'photoUrl', 'locale', 'lastLoginAt', 'updatedAt', 'flags', 'email', 'isAnonymous', 'providers']);
+
+      // Deletion is a server-side flow so related data can be cleaned up.
+      allow delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

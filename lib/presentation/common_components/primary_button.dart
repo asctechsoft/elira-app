@@ -6,6 +6,7 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onTap;
   final Widget? icon;
   final bool isLoading;
+  final bool enabled;
   final double height;
 
   const PrimaryButton({
@@ -14,23 +15,29 @@ class PrimaryButton extends StatelessWidget {
     this.onTap,
     this.icon,
     this.isLoading = false,
+    this.enabled = true,
     this.height = 56,
   });
+
+  /// Appearance has to track the loading state too: previously only a null
+  /// onTap greyed the button out, so a button that was busy still looked
+  /// tappable while silently swallowing taps.
+  bool get _isInteractive => enabled && !isLoading && onTap != null;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: isLoading ? null : onTap,
+      onTap: _isInteractive ? onTap : null,
       child: Container(
         width: double.infinity,
         height: height,
         decoration: BoxDecoration(
-          gradient: onTap == null
-              ? null
-              : const LinearGradient(
+          gradient: (enabled && onTap != null)
+              ? const LinearGradient(
                   colors: [AppColors.gradientStart, AppColors.gradientEnd],
-                ),
-          color: onTap == null ? Colors.grey.shade300 : null,
+                )
+              : null,
+          color: (enabled && onTap != null) ? null : AppColors.disabled,
           borderRadius: BorderRadius.circular(height / 2),
         ),
         child: isLoading

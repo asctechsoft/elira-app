@@ -16,6 +16,9 @@ class AppColors {
 
   static const success = Color(0xFF22C55E);
   static const error = Color(0xFFEF4444);
+  static const disabled = Color(0xFFD5DEEA);
+  static const splashScript = Color(0xFF8BB8F0);
+  static const proAccent = Color(0xFFF59E0B);
 
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [gradientStart, gradientEnd],

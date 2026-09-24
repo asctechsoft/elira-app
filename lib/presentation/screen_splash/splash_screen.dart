@@ -1,46 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../values/app_colors.dart';
-import '../../values/route_name.dart';
 
-class SplashScreen extends StatefulWidget {
+import '../../controller/splash_controller.dart';
+import '../../values/app_colors.dart';
+import '../../values/app_strings.dart';
+
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _progressCtrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _progressCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2800),
-    )..forward();
-    Future.delayed(const Duration(milliseconds: 3000), () {
-      Get.offNamed(RouteName.onboarding);
-    });
-  }
-
-  @override
-  void dispose() {
-    _progressCtrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final ctrl = Get.find<SplashController>();
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Background
           Image.asset('assets/images/png/bg_splash.png', fit: BoxFit.cover),
-          // Bottom landscape scene
           Positioned(
             bottom: 0,
             left: 0,
@@ -50,7 +26,6 @@ class _SplashScreenState extends State<SplashScreen>
               fit: BoxFit.fitWidth,
             ),
           ),
-          // Decorative top-right handwriting
           const Positioned(
             top: 100,
             right: 28,
@@ -58,33 +33,30 @@ class _SplashScreenState extends State<SplashScreen>
               'Better\nPhotos\nBrighter\nYou ♡',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Color(0xFF8BB8F0),
+                color: AppColors.splashScript,
                 fontSize: 13,
                 height: 1.5,
                 fontStyle: FontStyle.italic,
               ),
             ),
           ),
-          // Decorative bottom-left
           const Positioned(
             bottom: 160,
             left: 28,
             child: Text(
               'Turn your\nmoments into\nmagic ✨',
               style: TextStyle(
-                color: Color(0xFF8BB8F0),
+                color: AppColors.splashScript,
                 fontSize: 13,
                 height: 1.5,
                 fontStyle: FontStyle.italic,
               ),
             ),
           ),
-          // Center content
           SafeArea(
             child: Column(
               children: [
                 const Spacer(),
-                // Logo with glow
                 Container(
                   width: 120,
                   height: 120,
@@ -128,37 +100,21 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 6),
                 const Text(
-                  'Edit. Enhance. Create.',
+                  AppStrings.tagline,
                   style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
                 ),
                 const Spacer(),
-                // Progress bar
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 64),
-                  child: Column(
-                    children: [
-                      AnimatedBuilder(
-                        animation: _progressCtrl,
-                        builder: (context2, child2) => LinearProgressIndicator(
-                          value: _progressCtrl.value,
-                          backgroundColor: Colors.white.withValues(alpha: 0.4),
-                          valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-                          borderRadius: BorderRadius.circular(4),
-                          minHeight: 4,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'LOADING MAGIC...',
-                        style: TextStyle(
-                          fontSize: 11,
-                          letterSpacing: 1.5,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                  child: Obx(() => ctrl.failure.value == null
+                      ? _BootProgress(
+                          progress: ctrl.progress.value,
+                          label: ctrl.statusLabel.value,
+                        )
+                      : _BootFailure(
+                          onRetry: ctrl.retry,
+                          onContinueOffline: ctrl.continueOffline,
+                        )),
                 ),
                 const SizedBox(height: 48),
               ],
@@ -166,6 +122,100 @@ class _SplashScreenState extends State<SplashScreen>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _BootProgress extends StatelessWidget {
+  const _BootProgress({required this.progress, required this.label});
+
+  final double progress;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        TweenAnimationBuilder<double>(
+          // Animates between real step completions instead of faking a timer,
+          // so the bar reflects actual boot work and grows naturally when more
+          // steps (remote config, entitlement restore) are appended.
+          tween: Tween(begin: 0, end: progress.clamp(0.0, 1.0)),
+          duration: const Duration(milliseconds: 350),
+          curve: Curves.easeOut,
+          builder: (context, value, _) => LinearProgressIndicator(
+            value: value,
+            backgroundColor: AppColors.surface.withValues(alpha: 0.4),
+            valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+            borderRadius: BorderRadius.circular(4),
+            minHeight: 4,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            letterSpacing: 1.5,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BootFailure extends StatelessWidget {
+  const _BootFailure({required this.onRetry, required this.onContinueOffline});
+
+  final VoidCallback onRetry;
+  final VoidCallback onContinueOffline;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Icon(Icons.cloud_off_outlined, color: AppColors.textSecondary, size: 28),
+        const SizedBox(height: 10),
+        const Text(
+          AppStrings.splashFailedTitle,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 6),
+        const Text(
+          AppStrings.splashFailedBody,
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.4),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                minimumSize: const Size(0, 42),
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+              ),
+              child: const Text(AppStrings.retry),
+            ),
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: onContinueOffline,
+              child: const Text(
+                AppStrings.continueOffline,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

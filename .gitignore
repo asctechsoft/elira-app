@@ -47,6 +47,13 @@ app.*.map.json
 # Sensitive credentials
 google-services.json
 GoogleService-Info.plist
+.env
+.env.*
+!.env.example
+
+# Machine-specific
+android/local.properties
+local.properties
 
 # Widget Preview related
 .widget_preview/

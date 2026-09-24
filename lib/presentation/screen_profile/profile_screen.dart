@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controller/profile_controller.dart';
 import '../../values/app_colors.dart';
+import '../../values/app_strings.dart';
+import 'widgets/edit_profile_sheet.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -36,63 +38,91 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
-                  child: Column(
-                    children: [
-                      Row(
+                  // The Obx has to wrap the whole card: it previously covered
+                  // only the stats row, so the name and badge were captured at
+                  // first build and never updated after sign-in.
+                  child: Obx(() => Column(
                         children: [
-                          Stack(
+                          Row(
                             children: [
-                              const CircleAvatar(radius: 32, backgroundColor: Color(0xFFE8F0FF), child: Icon(Icons.person, size: 32, color: AppColors.primary)),
-                              Positioned(
-                                bottom: 0,
-                                right: 0,
-                                child: Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Colors.white, blurRadius: 2, spreadRadius: 1)])),
+                              Stack(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 32,
+                                    backgroundColor: AppColors.actionFilters,
+                                    backgroundImage: ctrl.photoUrl == null ? null : NetworkImage(ctrl.photoUrl!),
+                                    child: ctrl.photoUrl != null
+                                        ? null
+                                        : Text(ctrl.initials,
+                                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.primary)),
+                                  ),
+                                  Positioned(
+                                    bottom: 0,
+                                    right: 0,
+                                    child: Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle, boxShadow: [BoxShadow(color: AppColors.surface, blurRadius: 2, spreadRadius: 1)])),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(ctrl.displayName, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          ctrl.isPro ? Icons.workspace_premium : Icons.person_outline,
+                                          size: 14,
+                                          color: ctrl.isPro ? AppColors.proAccent : AppColors.textSecondary,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(ctrl.badge, style: TextStyle(color: ctrl.isPro ? AppColors.proAccent : AppColors.textSecondary, fontWeight: FontWeight.w600, fontSize: 13)),
+                                      ],
+                                    ),
+                                    Text(
+                                      ctrl.email.isEmpty ? 'Turning everyday moments into magic ✨' : ctrl.email,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: ctrl.isGuest ? ctrl.goToSignup : () => EditProfileSheet.show(ctrl),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                  decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
+                                  child: Row(
+                                    children: [
+                                      Text(ctrl.isGuest ? AppStrings.signUpAction : AppStrings.editProfile,
+                                          style: const TextStyle(color: AppColors.surface, fontWeight: FontWeight.w700, fontSize: 12)),
+                                      const SizedBox(width: 4),
+                                      const Icon(Icons.arrow_forward, color: AppColors.surface, size: 12),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ],
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text('Emma Carter', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: AppColors.textPrimary)),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.workspace_premium, size: 14, color: Colors.amber),
-                                    const SizedBox(width: 4),
-                                    const Text('Pro Member', style: TextStyle(color: Colors.amber, fontWeight: FontWeight.w600, fontSize: 13)),
-                                  ],
-                                ),
-                                const Text('Turning everyday moments into magic ✨', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                            decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
-                            child: const Row(
-                              children: [
-                                Text('Manage Pro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-                                SizedBox(width: 4),
-                                Icon(Icons.arrow_forward, color: Colors.white, size: 12),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const Divider(height: 24),
-                      Obx(() => Row(
+                          if (ctrl.isGuest) ...[
+                            const SizedBox(height: 14),
+                            _GuestCta(onTap: ctrl.goToSignup),
+                          ],
+                          const Divider(height: 24),
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _StatItem(value: '${ctrl.projectCount.value}', label: 'Projects', icon: Icons.layers_outlined),
-                              Container(width: 1, height: 40, color: Colors.grey.shade200),
-                              _StatItem(value: '${ctrl.favoriteCount.value}', label: 'Favorites', icon: Icons.favorite_outline, iconColor: Colors.red),
-                              Container(width: 1, height: 40, color: Colors.grey.shade200),
-                              _StatItem(value: '${ctrl.aiCredits.value}', label: 'AI Credits', icon: Icons.auto_awesome, iconColor: Colors.amber),
+                              _StatItem(value: '${ctrl.projectCount}', label: 'Projects', icon: Icons.layers_outlined),
+                              Container(width: 1, height: 40, color: AppColors.cardBg),
+                              _StatItem(value: '${ctrl.favoriteCount}', label: 'Favorites', icon: Icons.favorite_outline, iconColor: AppColors.error),
+                              Container(width: 1, height: 40, color: AppColors.cardBg),
+                              _StatItem(value: '${ctrl.aiCredits}', label: 'AI Credits', icon: Icons.auto_awesome, iconColor: AppColors.proAccent),
                             ],
-                          )),
-                    ],
-                  ),
+                          ),
+                        ],
+                      )),
                 ),
               ),
             ),
@@ -116,11 +146,13 @@ class ProfileScreen extends StatelessWidget {
                   mainAxisSpacing: 10,
                   crossAxisSpacing: 10,
                   childAspectRatio: 2.8,
-                  children: const [
-                    _LibCard(icon: Icons.description_outlined, label: 'Drafts', count: 12, color: Color(0xFFDCFAF0)),
-                    _LibCard(icon: Icons.favorite_outline, label: 'Favorites', count: 56, color: Color(0xFFFFECEC), iconColor: Colors.red),
-                    _LibCard(icon: Icons.download_outlined, label: 'Downloads', count: 24, color: Color(0xFFE8F0FF)),
-                    _LibCard(icon: Icons.auto_awesome_outlined, label: 'Presets', count: 18, color: Color(0xFFEEEAFF), iconColor: Color(0xFF6B4FDB)),
+                  // Real zeros, not invented counts: nothing writes projects,
+                  // downloads or presets until the persistence phase lands.
+                  children: [
+                    Obx(() => _LibCard(icon: Icons.description_outlined, label: 'Drafts', count: ctrl.draftCount, color: AppColors.actionEnhance)),
+                    Obx(() => _LibCard(icon: Icons.favorite_outline, label: 'Favorites', count: ctrl.favoriteCount, color: AppColors.actionRemove, iconColor: AppColors.error)),
+                    Obx(() => _LibCard(icon: Icons.download_outlined, label: 'Downloads', count: ctrl.downloadCount, color: AppColors.actionFilters)),
+                    Obx(() => _LibCard(icon: Icons.auto_awesome_outlined, label: 'Presets', count: ctrl.presetCount, color: AppColors.actionRetouch, iconColor: AppColors.secondary)),
                   ],
                 ),
               ),
@@ -141,13 +173,22 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
                   child: Column(
-                    children: const [
-                      _SettingsRow(icon: Icons.auto_awesome, label: 'AI Credits', sub: 'View usage and get more credits', color: Color(0xFF6B4FDB)),
-                      _SettingsRow(icon: Icons.workspace_premium, label: 'Subscription', sub: 'Manage your plan and benefits', color: Colors.amber),
-                      _SettingsRow(icon: Icons.notifications_none, label: 'Notifications', sub: 'Choose what to be notified about', color: Colors.red),
-                      _SettingsRow(icon: Icons.settings_outlined, label: 'Settings', sub: 'App preferences and personalisation', color: AppColors.primary),
-                      _SettingsRow(icon: Icons.help_outline, label: 'Help Center', sub: 'Get support and find answers', color: Color(0xFF00875A)),
-                      _SettingsRow(icon: Icons.security_outlined, label: 'Privacy', sub: 'Your data and privacy controls', color: Color(0xFF6B4FDB), isLast: true),
+                    children: [
+                      const _SettingsRow(icon: Icons.auto_awesome, label: 'AI Credits', sub: 'View usage and get more credits', color: AppColors.secondary),
+                      const _SettingsRow(icon: Icons.workspace_premium, label: 'Subscription', sub: 'Manage your plan and benefits', color: AppColors.proAccent),
+                      const _SettingsRow(icon: Icons.notifications_none, label: 'Notifications', sub: 'Choose what to be notified about', color: AppColors.error),
+                      const _SettingsRow(icon: Icons.settings_outlined, label: 'Settings', sub: 'App preferences and personalisation', color: AppColors.primary),
+                      const _SettingsRow(icon: Icons.help_outline, label: 'Help Center', sub: 'Get support and find answers', color: AppColors.success),
+                      // Will host Delete Account (spec 25) once the flow exists.
+                      const _SettingsRow(icon: Icons.security_outlined, label: 'Privacy', sub: 'Your data and privacy controls', color: AppColors.secondary),
+                      _SettingsRow(
+                        icon: Icons.logout,
+                        label: AppStrings.signOut,
+                        sub: 'You can log back in at any time',
+                        color: AppColors.textSecondary,
+                        isLast: true,
+                        onTap: () => _confirmSignOut(ctrl),
+                      ),
                     ],
                   ),
                 ),
@@ -226,14 +267,17 @@ class _SettingsRow extends StatelessWidget {
   final String sub;
   final Color color;
   final bool isLast;
+  final VoidCallback? onTap;
 
-  const _SettingsRow({required this.icon, required this.label, required this.sub, required this.color, this.isLast = false});
+  const _SettingsRow({required this.icon, required this.label, required this.sub, required this.color, this.isLast = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Padding(
+        InkWell(
+          onTap: onTap,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Row(
             children: [
@@ -256,9 +300,71 @@ class _SettingsRow extends StatelessWidget {
               const Icon(Icons.chevron_right, color: AppColors.textHint, size: 18),
             ],
           ),
+          ),
         ),
         if (!isLast) const Divider(height: 1, indent: 64),
       ],
     );
   }
+}
+
+/// Where an anonymous guest converts. Placing it on Profile rather than behind
+/// a modal keeps the upgrade path visible without interrupting editing.
+class _GuestCta extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _GuestCta({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.actionAiMagic,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_upload_outlined, size: 18, color: AppColors.secondary),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Create a free account to keep your credits and drafts safe.',
+                style: TextStyle(fontSize: 12, color: AppColors.textPrimary, height: 1.35),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: AppColors.secondary),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> _confirmSignOut(ProfileController ctrl) async {
+  final confirmed = await Get.dialog<bool>(
+    AlertDialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      title: const Text(AppStrings.signOutConfirmTitle,
+          style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+      content: const Text(AppStrings.signOutConfirmBody,
+          style: TextStyle(color: AppColors.textSecondary)),
+      actions: [
+        TextButton(
+          onPressed: () => Get.back<bool>(result: false),
+          child: const Text(AppStrings.cancel, style: TextStyle(color: AppColors.textSecondary)),
+        ),
+        TextButton(
+          onPressed: () => Get.back<bool>(result: true),
+          child: const Text(AppStrings.signOut,
+              style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700)),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) await ctrl.signOut();
 }

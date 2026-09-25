@@ -40,7 +40,7 @@ class CreateScreen extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Create', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26, color: AppColors.textPrimary)),
+                        const Text('Sample', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 26, color: AppColors.textPrimary)),
                         const Text('Make stylish content in minutes', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),

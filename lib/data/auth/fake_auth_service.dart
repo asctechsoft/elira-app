@@ -3,6 +3,7 @@ import 'dart:async';
 import 'auth_failure.dart';
 import 'auth_service.dart';
 import 'auth_user.dart';
+import 'social_provider.dart';
 
 /// In-memory [AuthService]. Lives in `lib/` rather than `test/` on purpose: it
 /// backs both the unit tests and the offline dev mode the app falls back to
@@ -108,6 +109,30 @@ class FakeAuthService implements AuthService {
       displayName: displayName.trim(),
       isAnonymous: false,
       providers: const ['password'],
+    ));
+  }
+
+  @override
+  Future<AuthUser> signInWithSocial(SocialAuthProvider provider) async {
+    _uidCounter++;
+    return _emit(AuthUser(
+      uid: '${provider.name}-$_uidCounter',
+      displayName: '${provider.label} User',
+      providers: [provider.name],
+    ));
+  }
+
+  @override
+  Future<AuthUser> linkAnonymousToSocial(SocialAuthProvider provider) async {
+    final existing = _current;
+    if (existing == null || !existing.isAnonymous) {
+      throw const AuthFailure(AuthFailureCode.unknown);
+    }
+    // Same uid: mirrors linkAnonymousToEmail so the guest keeps their credits.
+    return _emit(existing.copyWith(
+      displayName: '${provider.label} User',
+      isAnonymous: false,
+      providers: [provider.name],
     ));
   }
 

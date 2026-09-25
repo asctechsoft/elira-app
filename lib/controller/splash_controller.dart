@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../controller/auth_controller.dart';
 import '../services/app_bootstrap.dart';
 import '../services/bootstrap_step.dart';
+import '../services/onboarding_prefs.dart';
 import '../services/service_locator.dart';
 import '../values/app_strings.dart';
 import '../values/route_name.dart';
@@ -81,6 +82,23 @@ class SplashController extends GetxController {
           action: () => AuthController.to.restoreSession(),
           timeout: const Duration(seconds: 8),
         ),
+        // Onboarding is a one-time thing: once it has been completed, a
+        // returning user always lands on Home, even if their session did not
+        // survive the restart (e.g. the in-memory dev auth stack, or an
+        // expired anonymous session).
+        CallbackBootstrapStep(
+          id: 'ensure-session',
+          label: AppStrings.splashLoading,
+          action: () async {
+            final auth = AuthController.to;
+            if (auth.isSignedIn) return;
+            if (await OnboardingPrefs.isComplete()) {
+              await auth.continueAsGuest();
+            }
+          },
+          isCritical: false,
+          timeout: const Duration(seconds: 5),
+        ),
         CallbackBootstrapStep(
           id: 'profile',
           label: AppStrings.splashLoading,
@@ -97,5 +115,9 @@ class SplashController extends GetxController {
 
   /// Escape hatch for the "no network on first launch" state: the local editor
   /// works offline, so a failed bootstrap must not trap the user on splash.
-  void continueOffline() => Get.offAllNamed(RouteName.onboarding);
+  Future<void> continueOffline() async {
+    Get.offAllNamed(
+      await OnboardingPrefs.isComplete() ? RouteName.main : RouteName.onboarding,
+    );
+  }
 }

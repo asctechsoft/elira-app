@@ -42,14 +42,21 @@ class AuthScaffold extends StatelessWidget {
                     if (showBack)
                       Align(
                         alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          onPressed: Get.back,
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(),
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new,
-                            size: 20,
-                            color: AppColors.textPrimary,
+                        // The column around this is padded 24px from the screen
+                        // edge; Padding can't take a negative inset, so this
+                        // translates back by that minus the 16px the button
+                        // should actually sit from the true screen edge.
+                        child: Transform.translate(
+                          offset: const Offset(-8, 0),
+                          child: IconButton(
+                            onPressed: Get.back,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              size: 20,
+                              color: AppColors.textPrimary,
+                            ),
                           ),
                         ),
                       ),

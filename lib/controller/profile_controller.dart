@@ -68,7 +68,7 @@ class ProfileController extends GetxController {
     }
   }
 
-  void goToSignup() => Get.toNamed(RouteName.signup);
+  void goToLogin() => Get.toNamed(RouteName.login);
 
   Future<void> signOut() async {
     await _auth.signOut();

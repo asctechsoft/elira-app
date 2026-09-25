@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../data/auth/auth_failure.dart';
 import '../data/auth/auth_service.dart';
 import '../data/auth/auth_user.dart';
+import '../data/auth/social_provider.dart';
 import '../data/user/user_repository.dart';
 import '../models/data_models/app_user.dart';
 
@@ -97,6 +98,13 @@ class AuthController extends GetxService {
 
   Future<bool> continueAsGuest() => _run(() async {
         final user = await _auth.signInAnonymously();
+        await _afterSignIn(user);
+      });
+
+  Future<bool> signInWithSocial(SocialAuthProvider provider) => _run(() async {
+        final user = isGuest
+            ? await _auth.linkAnonymousToSocial(provider)
+            : await _auth.signInWithSocial(provider);
         await _afterSignIn(user);
       });
 

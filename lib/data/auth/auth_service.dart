@@ -1,4 +1,5 @@
 import 'auth_user.dart';
+import 'social_provider.dart';
 
 abstract class AuthService {
   AuthUser? get currentUser;
@@ -25,6 +26,12 @@ abstract class AuthService {
     required String password,
     required String displayName,
   });
+
+  Future<AuthUser> signInWithSocial(SocialAuthProvider provider);
+
+  /// Upgrades the current anonymous session in place, keeping the same uid so
+  /// credits, drafts and stats survive the conversion.
+  Future<AuthUser> linkAnonymousToSocial(SocialAuthProvider provider);
 
   Future<void> sendPasswordResetEmail(String email);
 

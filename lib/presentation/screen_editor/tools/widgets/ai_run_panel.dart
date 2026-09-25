@@ -8,6 +8,7 @@ import '../../../../data/ai/ai_job.dart';
 import '../../../../models/data_models/ai_tool.dart';
 import '../../../../values/app_colors.dart';
 import '../../../../values/app_strings.dart';
+import '../../../../values/feature_flags.dart';
 import '../../../../values/route_name.dart';
 import 'ai_gate.dart';
 
@@ -52,7 +53,7 @@ class _AiRunPanelState extends State<AiRunPanel> {
     if (ai == null || !ai.isConfigured) {
       return AiGate(
         title: widget.tool.name,
-        credits: widget.tool.credits,
+        credits: FeatureFlags.creditsEnabled ? widget.tool.credits : null,
         description: widget.description,
         bullets: widget.bullets,
       );
@@ -147,7 +148,7 @@ class _AiRunPanelState extends State<AiRunPanel> {
 
   void _resolve(AiFailureCode code) {
     if (code == AiFailureCode.unauthorized) {
-      Get.toNamed(RouteName.signup);
+      Get.toNamed(RouteName.login);
     }
     // Buying credits is the store flow, which does not exist yet; until then
     // the message alone is the honest answer.
@@ -186,10 +187,11 @@ class _Header extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
-              Text(
-                '${tool.credits} credits · you have $balance',
-                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-              ),
+              if (FeatureFlags.creditsEnabled)
+                Text(
+                  '${tool.credits} credits · you have $balance',
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                ),
             ],
           ),
         ),
@@ -218,7 +220,7 @@ class _RunButton extends StatelessWidget {
       AiFailureCode.unauthorized => 'Create a free account',
       AiFailureCode.insufficientCredits => 'Not enough credits',
       AiFailureCode.notConfigured => 'Not connected yet',
-      _ => 'Run · ${tool.credits} credits',
+      _ => FeatureFlags.creditsEnabled ? 'Run · ${tool.credits} credits' : 'Run',
     };
 
     return SizedBox(

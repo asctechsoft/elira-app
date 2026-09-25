@@ -8,12 +8,10 @@ import 'package:elira/controller/editor_controller.dart';
 import 'package:elira/controller/forgot_password_controller.dart';
 import 'package:elira/controller/login_controller.dart';
 import 'package:elira/controller/profile_controller.dart';
-import 'package:elira/controller/signup_controller.dart';
 import 'package:elira/data/auth/fake_auth_service.dart';
 import 'package:elira/data/user/in_memory_user_repository.dart';
 import 'package:elira/presentation/screen_auth/forgot_password_screen.dart';
 import 'package:elira/presentation/screen_auth/login_screen.dart';
-import 'package:elira/presentation/screen_auth/signup_screen.dart';
 import 'package:elira/presentation/screen_editor/editor_screen.dart';
 import 'package:elira/presentation/screen_profile/profile_screen.dart';
 import 'package:elira/values/app_strings.dart';
@@ -47,51 +45,17 @@ void main() {
     expect(find.text('Original'), findsOneWidget);
   });
 
-  testWidgets('login screen rejects a malformed email before calling auth', (tester) async {
+  testWidgets('login screen offers only the three social sign-in options', (tester) async {
     await _installAuth();
     Get.put(LoginController());
 
     await tester.pumpWidget(_host(const LoginScreen()));
-    await tester.enterText(find.byType(TextFormField).first, 'not-an-email');
-    await tester.tap(find.widgetWithText(GestureDetector, AppStrings.logIn).last);
     await tester.pump();
 
-    expect(find.text(AppStrings.validation['emailInvalid']!), findsOneWidget);
-    expect(Get.find<AuthController>().isSignedIn, isFalse);
-  });
-
-  testWidgets('login screen shows an ambiguous error for a wrong password', (tester) async {
-    await _installAuth();
-    Get.put(LoginController());
-
-    await tester.pumpWidget(_host(const LoginScreen()));
-    final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(0), 'existing@example.com');
-    await tester.enterText(fields.at(1), 'wrong-password');
-    await tester.tap(find.widgetWithText(GestureDetector, AppStrings.logIn).last);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Email or password is incorrect.'), findsOneWidget);
-  });
-
-  testWidgets('signup blocks submission until the terms are accepted', (tester) async {
-    await _installAuth();
-    Get.put(SignupController());
-
-    await tester.pumpWidget(_host(const SignupScreen()));
-    final fields = find.byType(TextFormField);
-    await tester.enterText(fields.at(0), 'Linh');
-    await tester.enterText(fields.at(1), 'brand-new@example.com');
-    await tester.enterText(fields.at(2), 'secret123');
-    await tester.enterText(fields.at(3), 'secret123');
-    final submit = find.widgetWithText(GestureDetector, AppStrings.createAccount).last;
-    await tester.ensureVisible(submit);
-    await tester.pumpAndSettle();
-    await tester.tap(submit);
-    await tester.pumpAndSettle();
-
-    expect(find.text('Please accept the terms to continue.'), findsOneWidget);
-    expect(Get.find<AuthController>().isSignedIn, isFalse);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue with Facebook'), findsOneWidget);
+    expect(find.text('Continue with TikTok'), findsOneWidget);
+    expect(find.byType(TextFormField), findsNothing);
   });
 
   testWidgets('forgot password moves to the sent state', (tester) async {
@@ -121,7 +85,7 @@ void main() {
     expect(find.text('Linh Nguyen'), findsOneWidget);
     expect(find.text('linh@example.com'), findsOneWidget);
     expect(find.text('Emma Carter'), findsNothing);
-    expect(find.text('30'), findsOneWidget, reason: 'signup credit grant');
+    // The AI Credits stat is hidden while FeatureFlags.creditsEnabled is off.
 
     // The profile page nests a GridView inside the CustomScrollView, so the
     // scrollable has to be named explicitly.
@@ -133,7 +97,7 @@ void main() {
     expect(find.text(AppStrings.signOut), findsOneWidget);
   });
 
-  testWidgets('profile shows the guest state with an upgrade CTA', (tester) async {
+  testWidgets('profile shows the guest state with a login button', (tester) async {
     final auth = await _installAuth();
     await auth.continueAsGuest();
     Get.put(ProfileController());
@@ -143,6 +107,6 @@ void main() {
 
     expect(find.text(AppStrings.guestName), findsOneWidget);
     expect(find.text(AppStrings.guestBadge), findsOneWidget);
-    expect(find.text(AppStrings.signUpAction), findsOneWidget);
+    expect(find.text(AppStrings.logIn), findsWidgets);
   });
 }

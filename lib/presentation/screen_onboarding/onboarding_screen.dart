@@ -119,34 +119,13 @@ class OnboardingScreen extends StatelessWidget {
                   )),
               // Get Started button
               Padding(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Obx(() => PrimaryButton(
                       label: AppStrings.getStarted,
                       icon: const Icon(Icons.arrow_forward, color: Colors.white),
                       isLoading: ctrl.auth.isBusy.value,
                       onTap: ctrl.onGetStarted,
                     )),
-              ),
-              // A fresh install previously had no route to /login at all.
-              Padding(
-                padding: const EdgeInsets.only(bottom: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text(
-                      AppStrings.alreadyHaveAccount,
-                      style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-                    ),
-                    TextButton(
-                      onPressed: ctrl.onLogIn,
-                      child: const Text(
-                        AppStrings.logInAction,
-                        style: TextStyle(
-                            color: AppColors.primary, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),

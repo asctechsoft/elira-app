@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../controller/editor_controller.dart';
 import '../../../models/data_models/edit_operation.dart';
+import '../../../models/data_models/user_preset.dart';
 import '../../../services/color_matrix.dart';
 import '../../../services/photo_filters.dart';
 import '../../../values/app_colors.dart';
@@ -31,7 +32,7 @@ class FiltersPanel extends StatelessWidget {
           SizedBox(height: 96, child: Obx(() => _strip(context))),
           Obx(() {
             if (ctrl.filterId.value == FilterParams.none) {
-              return const SizedBox(height: 12);
+              return const SizedBox(height: 8);
             }
             return ToolSlider(
               compact: true,
@@ -43,6 +44,7 @@ class FiltersPanel extends StatelessWidget {
               onChangeEnd: (_) => ctrl.commitFilter(),
             );
           }),
+          Obx(() => _SavedLooks(ctrl: ctrl)),
         ],
       ),
     );
@@ -139,6 +141,177 @@ class _Swatch extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+/// The user's own saved looks, alongside the built-in presets.
+///
+/// A look is the colour and effect settings only, so applying one to a
+/// different photo does what it did to the first. Saving is disabled until
+/// there is actually something to save.
+class _SavedLooks extends StatelessWidget {
+  const _SavedLooks({required this.ctrl});
+
+  final EditorController ctrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = ctrl.presets.toList();
+    final canSave = !ctrl.currentState.adjust.isIdentity ||
+        !ctrl.currentState.filter.isIdentity ||
+        !ctrl.currentState.effects.isIdentity;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'My looks',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: canSave ? () => _save(context) : null,
+                child: Opacity(
+                  opacity: canSave ? 1 : 0.4,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.bookmark_add_outlined,
+                          size: 15, color: AppColors.primary),
+                      SizedBox(width: 4),
+                      Text('Save look',
+                          style: TextStyle(fontSize: 12, color: AppColors.primary)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          if (presets.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 8),
+              child: Text(
+                'Adjust the photo, then save the look to reuse it.',
+                style: TextStyle(fontSize: 11, color: AppColors.textHint),
+              ),
+            )
+          else
+            SizedBox(
+              height: 34,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: presets.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => _LookChip(
+                  preset: presets[i],
+                  onTap: () => ctrl.applyPreset(presets[i]),
+                  onLongPress: () => _confirmDelete(context, presets[i]),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _save(BuildContext context) async {
+    final field = TextEditingController(
+      text: 'Look ${ctrl.presets.length + 1}',
+    );
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Save this look'),
+        content: TextField(
+          controller: field,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(field.text),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    field.dispose();
+    if (name != null) await ctrl.saveAsPreset(name);
+  }
+
+  Future<void> _confirmDelete(BuildContext context, UserPreset preset) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text('Delete "${preset.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await ctrl.deletePreset(preset.id);
+  }
+}
+
+class _LookChip extends StatelessWidget {
+  const _LookChip({
+    required this.preset,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  final UserPreset preset;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      onLongPress: onLongPress,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.disabled),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.bookmark, size: 12, color: AppColors.primary),
+            const SizedBox(width: 5),
+            Text(
+              preset.name,
+              style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary),
+            ),
+          ],
+        ),
       ),
     );
   }

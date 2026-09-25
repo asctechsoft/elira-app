@@ -6,15 +6,41 @@ import 'package:get/get.dart';
 
 import '../models/data_models/edit_operation.dart';
 import '../models/data_models/edit_project.dart';
+import '../data/presets/preset_repository.dart';
+import '../data/projects/project_repository.dart';
+import '../data/projects/project_sync.dart';
 import '../models/data_models/ai_tool.dart';
 import '../models/data_models/edit_stack.dart';
+import '../models/data_models/photo_template.dart';
+import '../models/data_models/user_preset.dart';
 import '../models/data_models/text_layer.dart';
 import '../models/ui_models/editor_tool.dart';
 import '../services/image_pipeline.dart';
 import '../services/photo_filters.dart';
 
 class EditorController extends GetxController {
-  EditorController({this.renderDelay = const Duration(milliseconds: 150)});
+  EditorController({
+    this.renderDelay = const Duration(milliseconds: 150),
+    ProjectRepository? projects,
+    PresetRepository? presets,
+    BackgroundProjectSync? sync,
+    this.saveDelay = const Duration(milliseconds: 600),
+  })  : _projects = projects,
+        _presets = presets,
+        _sync = sync;
+
+  /// Where the edit stack is written back to. Null in tests that do not care.
+  final ProjectRepository? _projects;
+
+  /// The user's saved looks.
+  final PresetRepository? _presets;
+
+  /// Cloud backup of the recipe. Never awaited on an edit path.
+  final BackgroundProjectSync? _sync;
+
+  /// Debounce before the stack is written to the database. A drag can produce
+  /// many commits; the disk only needs the last one.
+  final Duration saveDelay;
 
   /// Debounce before a spatial drag (sharpness, effects) triggers a CPU
   /// render. Colour sliders and filters never render on the CPU: the canvas
@@ -71,6 +97,9 @@ class EditorController extends GetxController {
   /// box can be re-dragged over the whole image the way every editor does.
   final isCropping = false.obs;
 
+  /// Looks the user saved, newest used first.
+  final presets = <UserPreset>[].obs;
+
   /// Locked crop aspect (width / height), or null for a free-form box. Both
   /// the panel and the drag handles read this, so a preset stays enforced
   /// while a corner is dragged instead of only at the moment it is tapped.
@@ -83,6 +112,7 @@ class EditorController extends GetxController {
   Uint8List? _previewSource;
 
   Timer? _debounce;
+  Timer? _saveDebounce;
   int _loadToken = 0;
   int _swatchToken = 0;
 
@@ -119,11 +149,41 @@ class EditorController extends GetxController {
   }
 
   void _adopt(EditProject value) {
+    unawaited(loadPresets());
     project.value = value;
     imagePath.value = value.originalPath;
     final tool = _toolFromId(value.initialTool);
     if (tool != null) activeTool.value = tool;
+    _restoreSavedStack(value);
     unawaited(load());
+  }
+
+  /// Rebuilds the edit stack saved with the project, so reopening a draft from
+  /// Home lands exactly where it was left — including its undo history.
+  void _restoreSavedStack(EditProject value) {
+    _stack.clear();
+    final saved = value.adjustments['operations'];
+    if (saved is! List || saved.isEmpty) {
+      _restoreFromStack();
+      _syncStackFlags();
+      return;
+    }
+    try {
+      _stack.restore(
+        saved
+            .whereType<Map>()
+            .map((m) =>
+                EditOperation.fromMap(m.map((k, v) => MapEntry(k.toString(), v))))
+            .toList(),
+      );
+    } catch (error) {
+      // A draft written by a newer build must not make the editor refuse to
+      // open; losing the history is the lesser failure.
+      debugPrint('[editor] could not restore the saved stack: $error');
+      _stack.clear();
+    }
+    _restoreFromStack();
+    _syncStackFlags();
   }
 
   /// Maps the Home quick-action ids onto editor tabs. The picker forwards the
@@ -370,19 +430,17 @@ class EditorController extends GetxController {
       isSaved.value = false;
       return;
     }
-    final frame = frameAspect;
-    var width = 1.0;
-    var height = 1.0;
-    if (ratio > frame) {
-      height = frame / ratio;
-    } else {
-      width = ratio / frame;
-    }
+    // Same maths a template uses to fit a ratio, kept in one place so a 1:1
+    // crop from the panel and a 1:1 template cannot disagree.
+    final box = PhotoTemplate.centeredCrop(
+      frameAspect: frameAspect,
+      ratio: ratio,
+    );
     setCropRect(
-      left: (1 - width) / 2,
-      top: (1 - height) / 2,
-      right: (1 + width) / 2,
-      bottom: (1 + height) / 2,
+      left: box.left,
+      top: box.top,
+      right: box.right,
+      bottom: box.bottom,
     );
   }
 
@@ -496,6 +554,78 @@ class EditorController extends GetxController {
     );
   }
 
+  // ---------------------------------------------------------------- presets
+
+  Future<void> loadPresets() async {
+    final repository = _presets;
+    if (repository == null) return;
+    try {
+      presets.value = await repository.all();
+    } catch (error) {
+      debugPrint('[editor] loading presets failed: $error');
+    }
+  }
+
+  /// Saves the current colour and effect settings as a reusable look. The
+  /// crop, the text and any AI result are left out on purpose: those belong to
+  /// this photo, and a preset that carried them would do something different
+  /// on the next one.
+  Future<UserPreset?> saveAsPreset(String name) async {
+    final repository = _presets;
+    final trimmed = name.trim();
+    if (repository == null || trimmed.isEmpty) return null;
+
+    final preset = UserPreset.fromState(
+      id: 'preset_${DateTime.now().microsecondsSinceEpoch}',
+      name: trimmed,
+      state: currentState,
+    );
+    if (preset.isEmpty) {
+      errorMessage.value = 'There is nothing to save yet.';
+      return null;
+    }
+
+    try {
+      await repository.save(preset);
+      await loadPresets();
+      return preset;
+    } catch (error) {
+      debugPrint('[editor] saving a preset failed: $error');
+      errorMessage.value = 'Could not save that look.';
+      return null;
+    }
+  }
+
+  /// Applying a preset is ordinary editing: it pushes the same operations a
+  /// hand-made edit would, so it is undoable step by step.
+  Future<void> applyPreset(UserPreset preset) async {
+    for (final op in preset.toOperations()) {
+      _stack.push(op);
+    }
+    _restoreFromStack();
+    _syncStackFlags();
+    await _syncBase();
+    unawaited(_syncSwatch());
+    await _attachThumbnail();
+    _scheduleSave();
+
+    try {
+      await _presets?.markUsed(preset.id);
+      await loadPresets();
+    } catch (error) {
+      debugPrint('[editor] marking a preset used failed: $error');
+    }
+  }
+
+  Future<void> deletePreset(String id) async {
+    try {
+      await _presets?.delete(id);
+      await loadPresets();
+    } catch (error) {
+      debugPrint('[editor] deleting a preset failed: $error');
+    }
+  }
+
   // -------------------------------------------------------------------- ai
 
   /// Folds a finished AI result into the stack as an ordinary operation.
@@ -554,6 +684,7 @@ class EditorController extends GetxController {
   Future<void> _afterCursorMove() async {
     _restoreFromStack();
     _syncStackFlags();
+    _scheduleSave();
     // Undoing past an applied AI result puts a different file underneath the
     // whole stack, so the decoded source has to be rebuilt, not just the
     // spatial cache.
@@ -619,9 +750,43 @@ class EditorController extends GetxController {
     unawaited(_syncSwatch());
     await _attachThumbnail();
     _syncStackFlags();
+    _scheduleSave();
   }
 
   // -------------------------------------------------------------- render
+
+  /// Writes the stack back to the project row. Debounced, and fire-and-forget:
+  /// a slow disk must never make the canvas wait.
+  void _scheduleSave() {
+    final repository = _projects;
+    final current = project.value;
+    if (repository == null || current == null) return;
+
+    _saveDebounce?.cancel();
+    _saveDebounce = Timer(saveDelay, () => unawaited(saveNow()));
+  }
+
+  Future<void> saveNow() async {
+    final repository = _projects;
+    final current = project.value;
+    if (repository == null || current == null) return;
+
+    _saveDebounce?.cancel();
+    try {
+      final adjustments = {
+        'v': 1,
+        'operations': _stack.applied.map((op) => op.toMap()).toList(),
+      };
+      await repository.touch(current.id, adjustments: adjustments);
+
+      // The local database is the source of truth and has just been written;
+      // the cloud copy is a best-effort backup that must not block anything.
+      final saved = await repository.byId(current.id);
+      if (saved != null) _sync?.pushLater(saved);
+    } catch (error) {
+      debugPrint('[editor] save failed: $error');
+    }
+  }
 
   void _scheduleBase() {
     _debounce?.cancel();
@@ -774,6 +939,9 @@ class EditorController extends GetxController {
   @override
   void onClose() {
     _debounce?.cancel();
+    _saveDebounce?.cancel();
+    // Leaving the editor is exactly when an in-flight debounce would be lost.
+    unawaited(saveNow());
     super.onClose();
   }
 }

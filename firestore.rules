@@ -32,6 +32,31 @@ service cloud.firestore {
 
       // Deletion is a server-side flow so related data can be cleaned up.
       allow delete: if false;
+
+      // A project is the user's own work, so unlike credits the client does
+      // own these documents outright. The guards below are about shape, not
+      // permission: a row the app cannot read back is worse than no row.
+      //
+      // Note there is no image here. Only the edit recipe and the id of the
+      // gallery photo are stored; the bytes stay on the device until Firebase
+      // Storage exists. Nothing in this collection is enough to reconstruct a
+      // user's photo on its own.
+      match /projects/{projectId} {
+        allow read, delete: if request.auth != null && request.auth.uid == uid;
+
+        allow create, update: if request.auth != null
+          && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly([
+               'name', 'width', 'height', 'createdAt', 'updatedAt',
+               'sourceAssetId', 'adjustments', 'schemaVersion'
+             ])
+          && request.resource.data.name is string
+          && request.resource.data.name.size() <= 200
+          && request.resource.data.updatedAt is int
+          // A stack that large is a bug or an attempt to use the document as
+          // free storage; either way it must not reach the database.
+          && request.resource.data.adjustments.size() <= 64;
+      }
     }
 
     match /{document=**} {

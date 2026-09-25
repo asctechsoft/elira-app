@@ -74,6 +74,15 @@ class EditStack {
     _cursor = 0;
   }
 
+  /// Rebuilds the stack from a saved project, with the cursor at the end.
+  /// Thumbnails are not persisted, so the strip fills them in again lazily.
+  void restore(List<EditOperation> operations) {
+    _ops
+      ..clear()
+      ..addAll(operations);
+    _cursor = _ops.length;
+  }
+
   void replaceAt(int index, EditOperation op) {
     if (index < 0 || index >= _ops.length) return;
     _ops[index] = op;

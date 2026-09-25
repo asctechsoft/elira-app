@@ -10,6 +10,12 @@ import '../data/ai/fake_ai_service.dart';
 import '../data/auth/auth_service.dart';
 import '../data/auth/fake_auth_service.dart';
 import '../data/auth/firebase_auth_service.dart';
+import '../data/presets/preset_repository.dart';
+import '../data/projects/app_database.dart';
+import '../data/projects/in_memory_project_repository.dart';
+import '../data/projects/project_repository.dart';
+import '../data/projects/project_sync.dart';
+import '../data/projects/sqflite_project_repository.dart';
 import '../data/user/firestore_user_repository.dart';
 import '../data/user/in_memory_user_repository.dart';
 import '../data/user/user_repository.dart';
@@ -52,6 +58,54 @@ class ServiceLocator {
       Get.put<UserRepository>(InMemoryUserRepository(), permanent: true);
     }
     _registerAi();
+    _registerProjects();
+  }
+
+  /// The project list is local-only for now. If sqflite cannot be opened the
+  /// app still runs with an in-memory store: losing the drafts list is bad,
+  /// refusing to start over it is worse.
+  static void _registerProjects() {
+    if (Get.isRegistered<ProjectRepository>()) return;
+    try {
+      // One database, shared by both repositories.
+      final database = AppDatabase();
+      Get.put<ProjectRepository>(
+        SqfliteProjectRepository(database),
+        permanent: true,
+      );
+      Get.put<PresetRepository>(
+        SqflitePresetRepository(database),
+        permanent: true,
+      );
+      _registerSync();
+    } catch (error) {
+      debugPrint('[elira] sqflite unavailable, projects are session-only: $error');
+      Get.put<ProjectRepository>(InMemoryProjectRepository(), permanent: true);
+      Get.put<PresetRepository>(InMemoryPresetRepository(), permanent: true);
+      _registerSync();
+    }
+  }
+
+  /// Cloud backup of the edit recipe. Only wired when Firebase is actually
+  /// configured; otherwise the UI sees an unavailable sync and hides the
+  /// cloud section rather than showing one that never fills.
+  static void _registerSync() {
+    if (Get.isRegistered<BackgroundProjectSync>()) return;
+    final ProjectSync sync = _firebaseReady
+        ? FirestoreProjectSync(
+            firestore: FirebaseFirestore.instance,
+            uid: () => Get.isRegistered<AuthService>()
+                ? Get.find<AuthService>().currentUser?.uid
+                : null,
+          )
+        : const NullProjectSync();
+    Get.put(
+      BackgroundProjectSync(
+        sync: sync,
+        projects: Get.find<ProjectRepository>(),
+      ),
+      permanent: true,
+    );
   }
 
   /// A build with no `ELIRA_AI_ENDPOINT` gets a service that reports itself as

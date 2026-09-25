@@ -37,12 +37,19 @@ dependencies:
   lottie: ^3.3.1
 
   # Export / Share
+  gal: ^2.3.1
   share_plus: ^10.1.4
   http: ^1.6.0
   permission_handler: ^11.4.0
   intl: ^0.20.2
 
 dev_dependencies:
+  # Runs the real sqflite SQL on the desktop VM, so the database layer is
+  # tested rather than only compiled.
+  sqflite_common_ffi: ^2.3.4
+  # Needed to point getTemporaryDirectory at a test-owned folder.
+  path_provider_platform_interface: ^2.1.2
+  plugin_platform_interface: ^2.1.8
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

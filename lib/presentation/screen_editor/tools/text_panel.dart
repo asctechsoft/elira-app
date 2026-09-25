@@ -5,7 +5,7 @@ import '../../../controller/editor_controller.dart';
 import '../../../models/data_models/text_layer.dart';
 import '../../../values/app_colors.dart';
 import '../../common_components/tool_slider.dart';
-import '../widgets/text_fonts.dart';
+import '../../../values/text_fonts.dart';
 import 'widgets/tool_chip.dart';
 
 /// Add Text, then font / colour / alignment / size for whichever layer is

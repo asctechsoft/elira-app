@@ -265,104 +265,233 @@ Test mới: `ai_service_test.dart` (map lỗi, MockClient kiểm 402/body-error/
 
 ---
 
-## 6. Export (`screen_export/`)
+## 6. Export (`screen_export/`) — ĐÃ THI CÔNG
 
-### Controller: `ExportController`
-- [ ] `exportPhoto()` hiện = fake 2s delay
-- [ ] Implement thật:
-  - Render ảnh cuối (với tất cả adjustments + layers)
-  - Save ra file temp
-  - `image_gallery_saver` hoặc `gal` package → save vào Camera Roll
-  - Upload lên Firestore Storage (optional, cho cloud backup)
-  - Lưu `EditProject` record vào sqflite/Firestore
+### `ExportService` — nơi stack được replay thật
+- [x] Replay **toàn bộ** `EditState` ở **độ phân giải gốc**: geometry → spatial → ma trận màu. Editor chỉnh trên bản 1440px, đây là chỗ duy nhất chạy lại trên pixel thật (spec §7/§23)
+- [x] Dùng **đúng các stage và đúng ma trận màu** của `ImagePipeline` mà canvas dùng — khác nhau ở đây là bug, nên có test so preview với export
+- [x] `ExportStage`: rendering → compositing → encoding → saving → done, báo ra UI
+- [x] Ảnh gốc **không bao giờ bị ghi đè** (có test)
+
+### Text — chỗ khó nhất của mục này
+- [x] Thêm `RawPixels`: pipeline có điểm thoát **trước khi encode**, vì `TextPainter` cần engine Flutter nên **không chạy được trong isolate**
+- [x] Luồng: isolate (pixel) → main isolate (vẽ chữ bằng `TextPainter`) → isolate (encode). Mỗi bước vẫn testable riêng
+- [x] Dùng **cùng `TextFonts`** với editor → chữ xuất ra khớp với chữ trên màn, không phải xấp xỉ bằng bitmap font của package `image`
+- [x] Cỡ chữ và vị trí **chuẩn hoá theo ảnh** → cùng một caption trông như nhau ở bản 1080px và bản 6000px (có test tỉ lệ)
+- [x] Layer trắng nội dung bị bỏ qua; không có text và không watermark thì **bỏ hẳn bước compositing** (có test)
+
+### Controller
+- [x] `exportPhoto()` bỏ `Future.delayed(2s)` → render thật
+- [x] Format JPEG/PNG **wire thật**; quality slider **tự khoá khi chọn PNG** (PNG lossless, để slider sống trên một giá trị bị bỏ qua là nút lừa người dùng)
+- [x] Resolution: Original / 2048 / 1080, và nhãn **tính từ crop + xoay thật** — trước đây hardcode "3024 × 4032" bất kể đã làm gì với ảnh
+- [x] Watermark vẽ thật, **co theo kích thước ảnh** chứ không phải cỡ pixel cố định
+- [x] Lưu vào thư viện qua `gal`, xin quyền khi cần
+- [x] Share qua `Share.shareXFiles`; 4 nút social đều mở share sheet
+- [x] Progress theo **giai đoạn thật**, success state có độ phân giải + dung lượng file
+
+### Quyết định đáng nói
+- **Lưu thư viện thất bại ≠ export thất bại.** Quyền bị từ chối thì file vẫn tồn tại và vẫn share được; app báo đúng phần nào hỏng thay vì vứt cả kết quả
+- **4 nút social mở share sheet hệ thống**, không deep-link riêng từng app. Deep-link vào Instagram/TikTok cần SDK riêng của họ và quy trình duyệt riêng; share sheet là thứ chạy được hôm nay
+- **`gal` thay vì `image_gallery_saver`** (TODO cho chọn 1 trong 2): `image_gallery_saver` đã lâu không cập nhật cho Android 13+ scoped storage
+
+### Lỗi thật phát hiện khi viết test
+- [x] **`google_fonts` tải font qua mạng và ném lỗi bất đồng bộ kiểu fire-and-forget.** Nghĩa là export có thể **âm thầm vẽ chữ bằng font fallback**, khác với thứ người dùng vừa thấy trên editor. Đã cho `ExportService` **nạp font trước rồi `await GoogleFonts.pendingFonts()`** và bắt lỗi, nên hoặc dùng đúng font, hoặc fallback một cách có kiểm soát
+- [x] Thêm `TextFonts.allowDownloadableFonts` — tắt là không đụng mạng. Test dùng cờ này để kết quả tất định. **Cách sửa đúng vẫn là đóng gói file .ttf vào assets**, ghi nợ ở dưới
+
+### Chưa làm (thuộc mục khác)
+- [ ] Lưu `EditProject` xuống sqflite/Firestore sau export — **mục 9**. `EditState.toMap()` đã bao gồm cả 6 lát
+- [ ] Upload lên Firebase Storage (TODO ghi "optional") — `firebase_storage` chưa có trong pubspec, và nó kéo theo Storage rules + quota, nên để cùng phần cloud project
+- [ ] "Success → navigate về home": hiện ở lại màn Export kèm khối kết quả + nút Share. Đá người dùng đi ngay sau khi export là lấy mất cơ hội share, vốn là việc họ mở màn này để làm
+
+### Nợ kỹ thuật
+- Font vẫn tải runtime. Lần mở đầu không mạng → chữ (cả preview lẫn export) dùng font hệ thống. Đóng gói .ttf vào assets là việc của đợt polish
+
+**Verify:** `analyze` 0 issue · `test` **272/272 pass** (từ 238) · `build apk --debug --flavor dev` xanh.
+Test mới: `export_service_test.dart` (độ phân giải gốc/cap/crop/xoay, magic bytes JPEG-PNG, brightness–filter–effect có mặt trong pixel xuất ra, **export khớp preview**, text scale theo ảnh, thứ tự stage), `export_controller_test.dart` (gallery giả: có quyền / bị từ chối / ném lỗi — **từ chối quyền vẫn còn file share được**).
+
+---
+
+## 7. Home (`screen_home/`) — ĐÃ THI CÔNG
+
+> Mục này **bắt buộc kéo phần local của mục 9 lên trước**: đầu việc đầu tiên của
+> nó là "load recent projects từ sqflite". Không có store thì Home chỉ có hai
+> lựa chọn — dữ liệu giả, hoặc rỗng vĩnh viễn. Nên phần lưu trữ **cục bộ** làm ở
+> đây; **đồng bộ Firestore vẫn thuộc mục 9**.
+
+### Lưu trữ project (phần local của mục 9)
+- [x] `AppDatabase`: sqflite, schema v1, bảng `projects` + index `updated_at DESC` (Home query đúng cột này mỗi lần mở)
+- [x] `ProjectRepository` (abstract) + `SqfliteProjectRepository` + `InMemoryProjectRepository` + `NullProjectRepository`
+- [x] `touch()` **chỉ ghi field được truyền** — ghi cả row sẽ xoá mất tên vừa đổi hoặc thumbnail do đường khác ghi
+- [x] Mở DB hỏng → rơi về in-memory. Mất danh sách project là tệ, nhưng không mở được app vì nó còn tệ hơn
+- [x] `ProjectDraftService` **tự lưu row ngay khi tạo draft** — để không có thư mục ảnh nào tồn tại mà thiếu row trỏ tới (đó là cách thư mục mồ côi sinh ra)
+
+### Editor ghi ngược lại
+- [x] `EditorController` lưu **cả stack operation** (debounce 600ms + lưu nốt khi `onClose`)
+- [x] Mở lại project từ Home **khôi phục đúng chỗ đã dừng, gồm cả lịch sử undo**
+- [x] Chỉ lưu operation **đã áp dụng** — undo rồi thoát thì lần sau mở lên vẫn là trạng thái đã undo
+- [x] Draft do bản build mới hơn ghi mà đọc không hiểu → mở với lịch sử rỗng, không chặn người dùng vào editor
+
+### Controller
+- [x] `HomeController` bỏ skeleton: `recentProjects`, `isLoadingProjects`, `projectsFailed`, `deleteProject`
+- [x] Xoá sạch "Santorini Trip" / "My Puppy"
+- [x] DB lỗi → Home vẫn dùng được, chỉ là không có lịch sử
+- [x] Quay lại tab Home **tự load lại** — `MainShell` giữ cả 4 tab sống trong `IndexedStack` nên không có gì tự rebuild; và quay về từ editor cũng load lại
 
 ### UI
-- [ ] Format selector (JPEG/PNG) — hiện UI có, chưa wire vào logic
-- [ ] Quality slider — hiện UI có, chưa dùng khi export
-- [ ] Share button → `Share.shareXFiles([result file])`
-- [ ] Progress indicator thật khi đang export
-- [ ] Success state + navigate về home sau export
+- [x] "Continue Editing" là project thật, thumbnail thật, bấm vào mở đúng project (truyền cả `EditProject` chứ không chỉ path, nên stack được khôi phục)
+- [x] **Empty state thật**: bản cài mới không có gì để "continue", nay là một ô mời chọn ảnh thay vì 2 card bịa
+- [x] 3 nút `onSeeAll` rỗng đã wire: Quick Actions → tab AI · Continue Editing → `/projects` · Popular Presets → picker mở thẳng tab Filters
+- [x] Màn mới `/projects` (`screen_project_list` trong TODO): lưới toàn bộ project, pull-to-refresh, nhấn giữ để xoá kèm xác nhận
+- [x] Xoá project có hỏi trước — nó xoá bản sao ảnh người dùng đã bỏ công chỉnh (ảnh trong gallery không đụng tới)
+
+### Preset — khác TODO một chút
+TODO ghi "preset thumbnails thật (không phải colored box)". Làm hơn thế: preset
+trên Home nay **chính là filter thật của editor** (`PhotoFilters`), và mỗi card
+là **ảnh gần nhất của chính người dùng** xem qua ma trận màu của filter đó. Một
+lần decode ảnh cho cả dải, vì filter chỉ là ma trận màu (mục 4).
+Chưa có ảnh nào thì rơi về một gradient **cũng đi qua đúng ma trận đó** — vẫn
+cho thấy preset làm gì, thay vì ô xám.
+
+### Chưa làm (thuộc mục khác)
+- [ ] Đồng bộ Firestore, bảng `presets`, migration > v1 — **mục 9**
+- [ ] "Load user's recent filters/presets" (preset **do người dùng tự lưu**) — cần bảng presets, **mục 9**. Hiện dải preset là catalogue dựng sẵn
+- [ ] Màn `/templates` — **mục 8**
+
+**Verify:** `analyze` 0 issue · `test` **296/296 pass** (từ 272) · `build apk --debug --flavor dev` xanh.
+Test mới: `project_repository_test.dart` (thứ tự recent, limit, `touch` không ghi đè field khác, delete, `NullProjectRepository`), `home_controller_test.dart` (bản cài mới rỗng, DB hỏng vẫn dùng được, xoá, **mở lại project khôi phục cả lịch sử undo**, draft từ bản build mới hơn không làm vỡ editor).
+
+### Chưa kiểm chứng được
+`SqfliteProjectRepository` **chưa có test** — sqflite cần binding native nên unit
+test chạy được `InMemoryProjectRepository` (cùng interface, cùng hợp đồng) chứ
+không chạy được đường sqflite thật. Muốn phủ thì cần `sqflite_common_ffi` trong
+dev_dependencies, hoặc integration test trên máy thật.
 
 ---
 
-## 7. Home (`screen_home/`)
+## 8. Create (`screen_create/`) — ĐÃ THI CÔNG
 
-### Controller: `HomeController`
-- [ ] Load recent projects từ sqflite/Firestore → hiển thị "Continue Editing"
-- [ ] Xóa hardcode "Santorini Trip", "My Puppy"
-- [ ] Load user's recent filters/presets
+### Template là gì trong app này
+Editor là pipeline **một ảnh**. Nên một template ở đây = **một hình dạng + một
+tông màu**: tỉ lệ khung + filter + adjust + effect.
 
-### UI
-- [ ] 3 nút `onSeeAll: () {}` rỗng → navigate tới list screens tương ứng
-- [ ] "Continue Editing" items → route `/editor` với đúng project
-- [ ] Empty state khi chưa có project nào
-- [ ] Preset thumbnails thật (không phải colored box)
+Điểm thiết kế chính: **template biên dịch thẳng thành `EditOperation` thường**.
+Không có loại tài liệu mới, không có đường lưu riêng. Hệ quả:
+- Áp template **không tốn thêm gì** — nó chỉ là stack đã điền sẵn
+- **Từng bước một đều undo được**: thích crop nhưng không thích grain thì undo mỗi grain
+- Lưu và mở lại bằng **đúng code của mục 7**, không thêm cột, không thêm plumbing
+- Editor **không hề biết** template tồn tại
 
----
+### Model + catalogue
+- [x] `PhotoTemplate`: id, tên, category, tỉ lệ, adjust/filter/effect
+- [x] 9 template qua 4 nhóm: Social · Portrait · Product · Cinematic
+- [x] **Crop tính tại thời điểm áp**, không lưu sẵn: 9:16 trên ảnh ngang là hình chữ nhật khác hẳn trên ảnh dọc — và hình chữ nhật mới là thứ được lưu
+- [x] Catalogue **nằm trong app**, không phải Firestore. TODO cho chọn "Firestore hoặc local asset" — chọn local vì template chỉ là vài con số, tải về nghĩa là tab Create rỗng ở lần mở đầu không mạng, cho dữ liệu vốn không đổi giữa hai bản phát hành
+- [x] Id lạ → trả null, không ném lỗi
+- [x] Gộp lại phép tính crop theo tỉ lệ: panel Crop (mục 4) và template dùng **chung một hàm**, nên 1:1 ở hai nơi không thể lệch nhau
 
-## 8. Create (`screen_create/`)
+### Controller + UI
+- [x] `CreateController` bỏ rỗng: danh sách theo category, recent styles, `startTemplate()`
+- [x] **Recent styles** lưu bằng `shared_preferences` (package đã khai báo từ đầu, tới giờ mới dùng thật). Id lạ còn sót từ bản cũ bị loại, không hiện card rỗng
+- [x] 2 nút `onSeeAll` rỗng → màn `/templates` mới, lọc theo category
+- [x] Template → picker mang theo id → draft sinh ra **đã có sẵn operation của template**
+- [x] Card template hiện **đúng tỉ lệ thật** và **đúng ma trận màu** editor sẽ áp, không phải ô xám
 
-### Controller: `CreateController`
-- [ ] Rỗng hoàn toàn — cần implement:
-  - Load templates từ Firestore hoặc local asset
-  - Tạo mới project từ template
-  - Recent styles
+### Nói thẳng: 3 thứ không làm được
+`Collage`, `Poster`, `Product Card` **cần thứ engine chưa có** — ghép nhiều ảnh
+trong một khung, và layer dạng shape/text box. Đây là khoảng trống thật, không
+phải chuyện wire thêm.
+- [x] 3 tile này nay **nói rõ còn thiếu gì** khi bấm, thay vì không làm gì
+- [ ] Collage: cần compositing nhiều ảnh
+- [ ] Poster: cần layer shape / text box / background
+- [ ] Product Card: chờ tách nền (mục 5)
 
-### UI
-- [ ] `onSeeAll: () {}` rỗng → navigate tới template list
-- [ ] Template items → route `/editor` với template pre-loaded
+Đổi lại, 2 tile Quick Create đầu (`Story`, `Post`) nay chạy template thật.
 
----
+### Chưa làm (thuộc mục khác)
+- [ ] Template do người dùng tự lưu (lưu look hiện tại thành preset) — cần bảng `presets`, **mục 9**
+- [ ] Đồng bộ template/preset lên Firestore — **mục 9**
 
-## 9. Database Layer
-
-### sqflite (local)
-- [ ] Tạo `DatabaseService` hoặc `LocalDb` class
-- [ ] Schema:
-  ```sql
-  CREATE TABLE projects (
-    id TEXT PRIMARY KEY,
-    name TEXT,
-    original_path TEXT,
-    edited_path TEXT,
-    thumbnail_path TEXT,
-    created_at INTEGER,
-    updated_at INTEGER,
-    adjustments TEXT  -- JSON blob
-  );
-  ```
-- [ ] CRUD: `saveProject`, `loadProjects`, `deleteProject`, `updateProject`
-- [ ] `EditProject` model → serialize/deserialize
-
-### Firestore (cloud)
-- [ ] `/users/{uid}` — profile, credits, subscription
-- [ ] `/users/{uid}/projects/{pid}` — project metadata + cloud export URL
-- [ ] Sync local sqflite ↔ Firestore khi có mạng
+**Verify:** `analyze` 0 issue · `test` **327/327 pass** (từ 296) · `build apk --debug --flavor dev` xanh.
+Test mới: `photo_template_test.dart` (catalogue, `centeredCrop` các hướng khung, template gập thành state đúng, round-trip qua draft), `template_flow_test.dart` (**đi hết đường: tạo draft → editor khôi phục → tỉ lệ crop đúng → undo từng bước về ảnh gốc → mở lại vẫn còn**, và ảnh gốc không bị đụng).
 
 ---
 
-## 10. Packages cần thêm
+## 9. Database Layer — ĐÃ THI CÔNG
 
-```yaml
-# image processing
-image: ^4.x
-image_cropper: ^5.x
-image_gallery_saver: ^2.x  # hoặc gal: ^1.x
+> Phần **sqflite** đã làm ở mục 7 (vì Home không tồn tại được nếu thiếu nó).
+> Mục này đóng nốt: test chạy qua **SQL thật**, bảng `presets`, và Firestore.
 
-# HTTP + API
-dio: ^5.x  # thay http nếu cần interceptor
+### Đóng lỗ hổng test đã tự nêu ở mục 7
+- [x] Thêm `sqflite_common_ffi` (dev): bộ test chạy **SQL thật trên desktop VM**, không chỉ biên dịch
+- [x] Viết **hợp đồng dùng chung**, chạy **hai lần** — một lần với `InMemory…`, một lần với `Sqflite…`. Mọi test khác của dự án dùng bản in-memory, nên nếu nó không hành xử giống bản SQL thật thì các test đó chẳng chứng minh điều gì
+- [x] Test `PRAGMA table_info` khẳng định **mọi cột `EditProject.toMap()`/`UserPreset.toMap()` ghi ra đều tồn tại thật** — gõ sai tên cột là lỗi runtime mà trình biên dịch không bao giờ bắt được
+- [x] Test **migration v1 → v2**: tạo DB v1 y như máy người dùng đang có, chèn dữ liệu, rồi mở bằng code hiện tại — draft cũ phải còn nguyên
 
-# Permissions
-permission_handler: ^11.x
+### `DatabaseService` (mục 9 gọi là `LocalDb`)
+- [x] `AppDatabase`: schema có version, `_onUpgrade` cộng dồn từng version, không bao giờ tạo lại bảng
+- [x] CRUD đủ: `save` / `recent` / `all` / `byId` / `touch` / `delete` / `count`
+- [x] `EditProject` serialize/deserialize — đã có từ mục 2, nay được test qua SQL thật
 
-# Share
-share_plus: ^9.x
+### Bảng `presets` (v2) — trả nốt món nợ của mục 7
+- [x] `UserPreset` = **chỉ lát màu và effect**. Crop hay caption thuộc về *một tấm ảnh*, lưu vào look thì áp sang ảnh khác sẽ ra thứ khác hẳn
+- [x] `PresetRepository` + sqflite + in-memory + null
+- [x] `markUsed` dùng **một câu `UPDATE … use_count + 1`**, không read-modify-write: bấm nhanh hai lần thì không mất lượt nào
+- [x] UI trong panel Filters: "Save look", dải look đã lưu, nhấn giữ để xoá. Nút Save **tắt khi chưa có gì để lưu**
+- [x] Áp preset = **push operation thường** → undo được từng bước, lưu như mọi chỉnh sửa khác. Editor không cần biết preset là gì
 
-# Firebase (đã có, cần init)
-firebase_auth: ^5.x
-cloud_firestore: ^5.x
-firebase_storage: ^12.x  # nếu cần cloud backup
-```
+### Firestore — và giới hạn thật của nó
+- [x] `/users/{uid}` — đã xong từ mục 1
+- [x] `/users/{uid}/projects/{pid}` + rules: chủ sở hữu mới đọc/ghi, **khoá cứng danh sách field**, chặn tên > 200 ký tự và stack > 64 phần tử (chống dùng document làm kho miễn phí)
+- [x] `ProjectSync` + `FirestoreProjectSync` + `NullProjectSync` + `BackgroundProjectSync`
+- [x] Editor push lên cloud sau mỗi lần lưu local, **không bao giờ await trên đường chỉnh sửa**: Firestore bật offline persistence nên một write không resolve cho tới khi có mạng — await nó là treo editor ở chế độ máy bay
+- [x] Lỗi push/pull đều nuốt và log: DB local mới là nguồn sự thật và đã ghi xong trước đó
+
+**Chỉ đồng bộ *công thức*, không đồng bộ ảnh.** Chưa có Firebase Storage nên
+byte ảnh vẫn nằm trên máy. Hệ quả cần nói thẳng:
+- Cài lại trên **cùng máy** → khôi phục được, vì ảnh vẫn trong thư viện và tìm lại được bằng `sourceAssetId`
+- Sang **máy khác** → **không**. `CloudProject.isRestorable` là chỗ UI phân biệt hai ca này, thay vì mời người dùng khôi phục một thứ chắc chắn hỏng
+- Ảnh chụp từ camera trong app chưa từng là asset thư viện → cũng không khôi phục được
+
+**Đường dẫn máy không bao giờ rời thiết bị.** `originalPath`/`thumbnailPath`/
+`editedPath` không có trong document: sang máy khác chúng vô nghĩa, và chúng để
+lộ cấu trúc thư mục. Có test khẳng định điều này.
+
+### Chưa làm
+- [ ] **Firebase Storage** cho byte ảnh — đây là thứ chặn đồng bộ đa thiết bị, không phải chuyện wire thêm
+- [ ] Màn "khôi phục từ cloud": `BackgroundProjectSync.restorable()` đã sẵn sàng, còn thiếu bước dựng lại bản sao làm việc từ `sourceAssetId` (cần quyền thư viện, không test headless được)
+- [ ] Đồng bộ `presets` lên cloud — hiện chỉ local
+- [ ] Test rules bằng `firebase emulators:exec` — chưa chạy
+
+**Verify:** `analyze` 0 issue · `test` **373/373 pass** (từ 327).
+Test mới: `database_test.dart` (**hợp đồng chạy 2 lần trên 2 implementation**, schema, cột khớp model, **migration v1→v2 giữ nguyên dữ liệu**), `project_sync_test.dart` (đường dẫn máy không rò ra ngoài, field khớp đúng rules, push lỗi không ném vào editor, `restorable` ẩn thứ không khôi phục được).
+
+---
+
+## 10. Packages — ĐÃ RÀ SOÁT
+
+Phần lớn danh sách này đã tự giải quyết trong lúc thi công mục 2–9.
+
+| Package | Trạng thái |
+|---|---|
+| `image` | ✅ đang dùng thật (mục 3–6), là lõi pipeline |
+| `image_cropper` | ❌ **cố ý không dùng** — nó mở màn native riêng và trả về file đã cắt, làm đứt mạch non-destructive. Crop tự viết ở mục 4 là một operation replay được |
+| `gal` | ✅ đã thêm ở mục 6 (chọn thay `image_gallery_saver`, vốn lâu không cập nhật cho scoped storage Android 13+) |
+| `dio` | ❌ **chưa cần** — TODO ghi "thay http nếu cần interceptor". Client AI hiện không cần interceptor; `http` + `MockClient` đang test tốt |
+| `permission_handler` | ✅ đang dùng (mục 2) |
+| `share_plus` | ✅ đang dùng (mục 6) |
+| `firebase_auth`, `cloud_firestore` | ✅ đang dùng (mục 1, 9) |
+| `firebase_storage` | ❌ **chưa thêm** — cần cho byte ảnh trên cloud; xem giới hạn ở mục 9 |
+| `sqflite_common_ffi` | ✅ **mới thêm (dev)** — để test SQL thật |
+
+### Khai báo nhưng chưa dùng dòng nào
+Đã kiểm bằng cách grep `package:<tên>/` trong `lib/`:
+
+`cached_network_image` · `firebase_analytics` · `flutter_svg` · `lottie` ·
+`intl` · `cupertino_icons`
+
+- [ ] **Quyết định giữ hay bỏ.** Tôi **không tự xoá** vì có thể bạn đang để dành:
+  `lottie` cho animation, `flutter_svg` cho icon, `intl` cho i18n (đang hoãn từ mục 1)
+- [ ] `firebase_analytics` đáng chú ý riêng: đã khai báo nhưng **chưa init dòng nào**, nên hiện **không ghi nhận gì cả**. Hoặc wire vào, hoặc bỏ — để nguyên là tưởng có mà không có
 
 ---
 
@@ -373,8 +502,8 @@ firebase_storage: ^12.x  # nếu cần cloud backup
 | ~~`screen_login`~~ | `/login` | ✅ đã tạo |
 | ~~`screen_signup`~~ | `/signup` | ✅ đã tạo |
 | ~~`screen_forgot_password`~~ | `/forgot-password` | ✅ đã tạo |
-| `screen_template_list` | `/templates` | Browse all templates |
-| `screen_project_list` | `/projects` | All user projects |
+| ~~`screen_template_list`~~ | `/templates` | ✅ đã tạo (mục 8) |
+| ~~`screen_project_list`~~ | `/projects` | ✅ đã tạo (mục 7) |
 
 ---
 

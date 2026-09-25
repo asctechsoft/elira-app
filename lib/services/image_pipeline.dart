@@ -8,6 +8,26 @@ import '../models/data_models/edit_operation.dart';
 import 'color_matrix.dart';
 import 'photo_filters.dart';
 
+/// Decoded pixels on their way between stages.
+///
+/// Export needs an exit point *before* encoding: text is drawn with Flutter's
+/// own `TextPainter`, which needs the engine and therefore cannot run inside
+/// the isolate that does the pixel work. So the isolate hands back raw RGBA,
+/// the main isolate draws the overlays, and a second isolate call encodes.
+class RawPixels {
+  const RawPixels({
+    required this.rgba,
+    required this.width,
+    required this.height,
+  });
+
+  final Uint8List rgba;
+  final int width;
+  final int height;
+
+  int get pixelCount => width * height;
+}
+
 /// Immutable input to a render. Kept to plain data so it can cross an isolate
 /// boundary without any copying surprises.
 class RenderRequest {
@@ -75,6 +95,48 @@ class ImagePipeline {
 
   static Future<Uint8List> render(RenderRequest request) =>
       Isolate.run(() => renderSync(request));
+
+  /// All three stages, stopping short of encoding.
+  static RawPixels renderRawSync(RenderRequest request) {
+    var image = applyGeometry(_decode(request.bytes), request.state.geometry);
+    image = _fit(image, request.maxEdge);
+    image = _spatial(image, request.state);
+    image = applyColorMatrix(image, colorMatrixFor(request.state));
+    return RawPixels(
+      rgba: image.getBytes(order: img.ChannelOrder.rgba),
+      width: image.width,
+      height: image.height,
+    );
+  }
+
+  static Future<RawPixels> renderRaw(RenderRequest request) =>
+      Isolate.run(() => renderRawSync(request));
+
+  static Uint8List encodeSync(
+    RawPixels pixels, {
+    required bool png,
+    int quality = 92,
+  }) {
+    final image = img.Image.fromBytes(
+      width: pixels.width,
+      height: pixels.height,
+      bytes: pixels.rgba.buffer,
+      numChannels: 4,
+      order: img.ChannelOrder.rgba,
+    );
+    return Uint8List.fromList(
+      // PNG is lossless, so the quality slider does not apply to it; pretending
+      // otherwise in the UI would be a control that does nothing.
+      png ? img.encodePng(image) : img.encodeJpg(image, quality: quality),
+    );
+  }
+
+  static Future<Uint8List> encode(
+    RawPixels pixels, {
+    required bool png,
+    int quality = 92,
+  }) =>
+      Isolate.run(() => encodeSync(pixels, png: png, quality: quality));
 
   /// All three stages. Used for history thumbnails, filter swatches and — with
   /// a null [RenderRequest.maxEdge] — export.

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../models/data_models/text_layer.dart';
+import '../models/data_models/text_layer.dart';
 
 /// The fonts offered for text layers. Ids are persisted in the edit stack, so
 /// they are API — a [label] can be renamed freely, an id cannot.
@@ -25,6 +25,8 @@ class TextFont {
         Shadow(color: Color(0x66000000), blurRadius: 6, offset: Offset(0, 1)),
       ],
     );
+    if (!TextFonts.allowDownloadableFonts) return _fallback(base);
+
     return switch (id) {
       'serif' => GoogleFonts.playfairDisplay(textStyle: base, fontWeight: FontWeight.w700),
       'display' => GoogleFonts.bebasNeue(textStyle: base, letterSpacing: 1.5),
@@ -33,10 +35,31 @@ class TextFont {
       _ => GoogleFonts.plusJakartaSans(textStyle: base, fontWeight: FontWeight.w800),
     };
   }
+
+  /// Platform fonts only. Still visibly different from each other, so the
+  /// picker does not collapse into five identical swatches.
+  TextStyle _fallback(TextStyle base) => switch (id) {
+        'serif' => base.copyWith(fontFamily: 'serif', fontWeight: FontWeight.w700),
+        'display' =>
+          base.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1.5),
+        'script' => base.copyWith(fontStyle: FontStyle.italic, fontWeight: FontWeight.w700),
+        'mono' => base.copyWith(fontFamily: 'monospace', fontWeight: FontWeight.w600),
+        _ => base.copyWith(fontWeight: FontWeight.w800),
+      };
 }
 
 class TextFonts {
   const TextFonts._();
+
+  /// The five families are fetched from Google Fonts at runtime, so the first
+  /// use on a device with no network falls back to a platform font — and the
+  /// exported caption would then not match what the editor showed.
+  ///
+  /// Setting this false skips the network entirely and draws with platform
+  /// fonts, which is what tests do so their output is deterministic. The real
+  /// fix is to bundle the .ttf files as assets; until then this is the switch
+  /// that makes the behaviour a choice rather than a surprise.
+  static bool allowDownloadableFonts = true;
 
   static const List<TextFont> all = [
     TextFont(id: TextLayer.defaultFontId, label: 'Sans', sample: 'Aa'),

@@ -7,6 +7,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import '../models/data_models/edit_project.dart';
+import '../models/data_models/photo_template.dart';
 import '../services/project_draft_service.dart';
 import '../values/route_name.dart';
 
@@ -40,6 +41,10 @@ class PhotoPickerController extends GetxController {
   /// editor so it opens on the tool they asked for instead of the default.
   String? requestedTool;
 
+  /// Set when the user arrived from a Create template. The draft is then born
+  /// with that template's operations already in its stack.
+  PhotoTemplate? requestedTemplate;
+
   int _page = 0;
 
   bool get hasSelection => selectedAsset.value != null;
@@ -55,6 +60,9 @@ class PhotoPickerController extends GetxController {
     super.onInit();
     final arg = Get.arguments;
     if (arg is Map && arg['tool'] is String) requestedTool = arg['tool'] as String;
+    if (arg is Map && arg['template'] is String) {
+      requestedTemplate = PhotoTemplates.byId(arg['template'] as String);
+    }
     loadPhotos();
   }
 
@@ -182,7 +190,11 @@ class PhotoPickerController extends GetxController {
         activeTab.value = PickerTab.recents;
         return;
       }
-      await _openEditor(() => _drafts.createFromFile(File(shot.path), tool: requestedTool));
+      await _openEditor(() => _drafts.createFromFile(
+            File(shot.path),
+            tool: requestedTool,
+            template: requestedTemplate,
+          ));
     } catch (error) {
       debugPrint('[picker] camera failed: $error');
       errorMessage.value = 'Could not open the camera.';
@@ -193,7 +205,11 @@ class PhotoPickerController extends GetxController {
   Future<void> startEditing() async {
     final asset = selectedAsset.value;
     if (asset == null) return;
-    await _openEditor(() => _drafts.createFromAsset(asset, tool: requestedTool));
+    await _openEditor(() => _drafts.createFromAsset(
+          asset,
+          tool: requestedTool,
+          template: requestedTemplate,
+        ));
   }
 
   Future<void> _openEditor(Future<EditProject> Function() build) async {

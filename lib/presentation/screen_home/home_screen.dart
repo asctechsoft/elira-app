@@ -1,8 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
+import '../../controller/home_controller.dart';
+import '../../models/data_models/edit_project.dart';
+import '../../services/color_matrix.dart';
+import '../../services/photo_filters.dart';
 import '../../values/app_colors.dart';
 import '../../values/route_name.dart';
 import '../common_components/section_header.dart';
+import '../screen_projects/project_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,6 +26,7 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ctrl = Get.find<HomeController>();
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -114,7 +123,10 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: SectionHeader(title: 'Quick Actions', onSeeAll: () {}),
+                child: SectionHeader(
+                  title: 'Quick Actions',
+                  onSeeAll: () => ctrl.changeTab(2),
+                ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
@@ -141,52 +153,31 @@ class HomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: SectionHeader(title: 'Continue Editing', onSeeAll: () {}),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 130,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: const [
-                    _ProjectCard(name: 'Santorini Trip', timeAgo: 'Edited 2 hours ago'),
-                    SizedBox(width: 12),
-                    _ProjectCard(name: 'My Puppy', timeAgo: 'Edited 1 day ago'),
-                  ],
+                child: SectionHeader(
+                  title: 'Continue Editing',
+                  onSeeAll: () => Get.toNamed(RouteName.projects),
                 ),
               ),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            SliverToBoxAdapter(child: Obx(() => _ContinueEditing(ctrl: ctrl))),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
             // Popular Presets
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: SectionHeader(title: 'Popular Presets', onSeeAll: () {}),
-              ),
-            ),
-            const SliverToBoxAdapter(child: SizedBox(height: 14)),
-            SliverToBoxAdapter(
-              child: SizedBox(
-                height: 110,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  children: const [
-                    _PresetCard(name: 'Cinematic', sub: 'Moody & Epic'),
-                    SizedBox(width: 12),
-                    _PresetCard(name: 'Vibrant', sub: 'Bright & Lively'),
-                    SizedBox(width: 12),
-                    _PresetCard(name: 'Aesthetic', sub: 'Soft & Dreamy'),
-                    SizedBox(width: 12),
-                    _PresetCard(name: 'Golden Hour', sub: 'Warm & Rich'),
-                  ],
+                child: SectionHeader(
+                  title: 'Popular Presets',
+                  onSeeAll: () => Get.toNamed(
+                    RouteName.photoPicker,
+                    arguments: const {'tool': 'filters'},
+                  ),
                 ),
               ),
             ),
+            const SliverToBoxAdapter(child: SizedBox(height: 14)),
+            SliverToBoxAdapter(child: Obx(() => _PresetStrip(ctrl: ctrl))),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -231,89 +222,273 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-class _ProjectCard extends StatelessWidget {
-  final String name;
-  final String timeAgo;
+/// Real drafts, newest first. Empty is a first-class state here: a new install
+/// has nothing to continue, and two invented cards were the old placeholder.
+class _ContinueEditing extends StatelessWidget {
+  const _ContinueEditing({required this.ctrl});
 
-  const _ProjectCard({required this.name, required this.timeAgo});
+  final HomeController ctrl;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 180,
-      decoration: BoxDecoration(
-        color: Colors.grey.shade200,
-        borderRadius: BorderRadius.circular(16),
+    if (ctrl.isLoadingProjects.value && ctrl.recentProjects.isEmpty) {
+      return const SizedBox(
+        height: 130,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (ctrl.recentProjects.isEmpty) {
+      return const _NoProjectsYet();
+    }
+
+    final projects = ctrl.recentProjects.toList();
+    return SizedBox(
+      height: 130,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: projects.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _ProjectCard(
+          project: projects[i],
+          onReturn: ctrl.loadProjects,
+        ),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+    );
+  }
+}
+
+class _NoProjectsYet extends StatelessWidget {
+  const _NoProjectsYet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GestureDetector(
+        onTap: () => Get.toNamed(RouteName.photoPicker),
+        child: Container(
+          height: 130,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.disabled),
+          ),
+          child: const Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.add_photo_alternate_outlined,
+                  size: 30, color: AppColors.primary),
+              SizedBox(height: 8),
+              Text(
+                'Nothing in progress',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                  color: AppColors.textPrimary,
                 ),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
-                  Text(timeAgo, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                ],
+              SizedBox(height: 2),
+              Text(
+                'Pick a photo to start your first edit.',
+                style: TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProjectCard extends StatelessWidget {
+  const _ProjectCard({required this.project, required this.onReturn});
+
+  final EditProject project;
+  final Future<void> Function() onReturn;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      // Passing the project itself, not just a path, so the editor restores
+      // the saved edit stack rather than reopening the original. Reloading on
+      // the way back is what keeps "Edited 2 minutes ago" honest.
+      onTap: () async {
+        await Get.toNamed(RouteName.editor, arguments: project);
+        await onReturn();
+      },
+      child: Container(
+        width: 180,
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ProjectThumbnail(project: project),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      project.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13),
+                    ),
+                    Text(
+                      project.timeAgo,
+                      style: const TextStyle(color: Colors.white70, fontSize: 10),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The editor's real filters, previewed on the user's own most recent photo.
+/// Each card is the same thumbnail under that filter's colour matrix, so the
+/// whole strip costs one image decode and shows what the preset actually does.
+class _PresetStrip extends StatelessWidget {
+  const _PresetStrip({required this.ctrl});
+
+  final HomeController ctrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final presets = ctrl.presets;
+    final thumbnail = ctrl.latestThumbnail;
+
+    return SizedBox(
+      height: 110,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: presets.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (_, i) => _PresetCard(
+          filter: presets[i],
+          thumbnailPath: thumbnail,
+        ),
       ),
     );
   }
 }
 
 class _PresetCard extends StatelessWidget {
-  final String name;
-  final String sub;
+  const _PresetCard({required this.filter, required this.thumbnailPath});
 
-  const _PresetCard({required this.name, required this.sub});
+  final PhotoFilter filter;
+  final String? thumbnailPath;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 120,
-      decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(12)),
-      child: Stack(
-        children: [
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+    return GestureDetector(
+      // There is no photo open yet, so a preset sends the user to the picker
+      // and lands them on the Filters tab once they have chosen one.
+      onTap: () => Get.toNamed(
+        RouteName.photoPicker,
+        arguments: const {'tool': 'filters'},
+      ),
+      child: Container(
+        width: 120,
+        decoration: BoxDecoration(
+          color: AppColors.cardBg,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (thumbnailPath != null)
+              ColorFiltered(
+                colorFilter: ColorFilter.matrix(filter.matrix),
+                child: Image.file(
+                  File(thumbnailPath!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const _PresetSwatch(),
                 ),
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-                  Text(sub, style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                ],
+              )
+            else
+              _PresetSwatch(matrix: filter.matrix),
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.65)],
+                  ),
+                ),
+                child: Text(
+                  filter.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+}
+
+/// Stand-in for when there is no photo to preview on yet: a gradient put
+/// through the same matrix, so the card still shows the look rather than a
+/// grey box.
+class _PresetSwatch extends StatelessWidget {
+  const _PresetSwatch({this.matrix});
+
+  final List<double>? matrix;
+
+  @override
+  Widget build(BuildContext context) {
+    const gradient = DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFE8A87C), Color(0xFF6B7FB3), Color(0xFF2E3A59)],
+        ),
+      ),
+      child: SizedBox.expand(),
+    );
+
+    final m = matrix;
+    if (m == null || ColorMatrix.isIdentity(m)) return gradient;
+    return ColorFiltered(colorFilter: ColorFilter.matrix(m), child: gradient);
   }
 }

@@ -5,7 +5,7 @@ import '../../../controller/editor_controller.dart';
 import '../../../models/data_models/text_layer.dart';
 import '../../../models/ui_models/editor_tool.dart';
 import '../../../values/app_colors.dart';
-import 'text_fonts.dart';
+import '../../../values/text_fonts.dart';
 
 /// Draws the text layers over the canvas and lets them be dragged.
 ///

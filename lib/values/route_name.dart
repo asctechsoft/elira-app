@@ -8,4 +8,6 @@ class RouteName {
   static const photoPicker = '/photo-picker';
   static const editor = '/editor';
   static const export = '/export';
+  static const projects = '/projects';
+  static const templates = '/templates';
 }

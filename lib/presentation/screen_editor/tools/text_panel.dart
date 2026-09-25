@@ -11,23 +11,51 @@ import 'widgets/tool_chip.dart';
 /// Add Text, then font / colour / alignment / size for whichever layer is
 /// selected. Nothing here is enabled until a layer exists, so the controls
 /// never look live while they have nothing to act on.
-class TextPanel extends StatelessWidget {
+class TextPanel extends StatefulWidget {
   const TextPanel({super.key, required this.ctrl});
 
   final EditorController ctrl;
+
+  @override
+  State<TextPanel> createState() => _TextPanelState();
+}
+
+class _TextPanelState extends State<TextPanel> {
+  EditorController get ctrl => widget.ctrl;
+
+  // Dragging a layer on the photo changes only its position, which nothing
+  // in this panel shows. Returning the identical widget for an unchanged
+  // signature lets Flutter skip the whole subtree on every drag tick.
+  Object? _signature;
+  Widget? _built;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: AppColors.surface,
       padding: const EdgeInsets.only(top: 12, bottom: 12),
-      child: Obx(() => _build(context)),
+      child: Obx(() {
+        final layer = ctrl.selectedText;
+        final count = ctrl.texts.length;
+        final signature = (
+          count,
+          layer?.id,
+          layer?.text,
+          layer?.fontId,
+          layer?.color,
+          layer?.align,
+          layer?.size,
+        );
+        if (signature != _signature || _built == null) {
+          _signature = signature;
+          _built = _build(context, layer, count);
+        }
+        return _built!;
+      }),
     );
   }
 
-  Widget _build(BuildContext context) {
-    final layer = ctrl.selectedText;
-    final count = ctrl.texts.length;
+  Widget _build(BuildContext context, TextLayer? layer, int count) {
 
     return Column(
       mainAxisSize: MainAxisSize.min,

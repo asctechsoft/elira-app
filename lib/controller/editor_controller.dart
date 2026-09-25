@@ -236,7 +236,10 @@ class EditorController extends GetxController {
       : currentState;
 
   /// Read inside the canvas's Obx, so it subscribes to every colour input.
-  List<double> get colorMatrix => ImagePipeline.colorMatrixFor(currentState);
+  /// Deliberately not built from [currentState]: that would also subscribe
+  /// the canvas to text and crop, rebuilding the photo on every drag tick.
+  List<double> get colorMatrix =>
+      ImagePipeline.colorMatrixOf(currentAdjust, currentFilter);
 
   /// The adjust half only, for composing filter-strip swatches.
   List<double> get adjustMatrix => ImagePipeline.colorMatrix(currentAdjust);
@@ -533,7 +536,6 @@ class EditorController extends GetxController {
       dy: dy?.clamp(0.0, 1.0),
       size: size?.clamp(0.02, 0.4),
     );
-    texts.refresh();
     isSaved.value = false;
   }
 

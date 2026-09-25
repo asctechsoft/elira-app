@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -37,18 +38,13 @@ class TextOverlay extends StatelessWidget {
           children: [
             for (final layer in layers)
               _Layer(
+                key: ValueKey(layer.id),
                 layer: layer,
                 frame: frame,
                 selected: editable && layer.id == selectedId,
                 interactive: editable,
                 onTap: () => ctrl.selectText(layer.id),
-                onDrag: (delta) {
-                  ctrl.updateText(
-                    layer.id,
-                    dx: layer.dx + delta.dx / frame.width,
-                    dy: layer.dy + delta.dy / frame.height,
-                  );
-                },
+                onDrag: (dx, dy) => ctrl.updateText(layer.id, dx: dx, dy: dy),
                 onDragEnd: () => ctrl.commitText('Text'),
               ),
           ],
@@ -76,8 +72,12 @@ Rect fittedImageRect(Size size, double aspect) {
   );
 }
 
-class _Layer extends StatelessWidget {
+/// Called with the layer's new centre, normalised to the photo frame.
+typedef _LayerMove = void Function(double dx, double dy);
+
+class _Layer extends StatefulWidget {
   const _Layer({
+    super.key,
     required this.layer,
     required this.frame,
     required this.selected,
@@ -92,15 +92,45 @@ class _Layer extends StatelessWidget {
   final bool selected;
   final bool interactive;
   final VoidCallback onTap;
-  final ValueChanged<Offset> onDrag;
+  final _LayerMove onDrag;
   final VoidCallback onDragEnd;
 
   @override
+  State<_Layer> createState() => _LayerState();
+}
+
+class _LayerState extends State<_Layer> {
+  // Position is derived from where the finger is relative to where it went
+  // down, never by adding a delta to widget.layer: that snapshot only
+  // refreshes once per frame, so every extra pointer event in a frame would
+  // overwrite the previous one and the layer would fall behind the finger.
+  Offset _startPointer = Offset.zero;
+  double _startDx = 0;
+  double _startDy = 0;
+
+  void _onPanStart(DragStartDetails details) {
+    _startPointer = details.globalPosition;
+    _startDx = widget.layer.dx;
+    _startDy = widget.layer.dy;
+    widget.onTap();
+  }
+
+  void _onPanUpdate(DragUpdateDetails details) {
+    final moved = details.globalPosition - _startPointer;
+    widget.onDrag(
+      _startDx + moved.dx / widget.frame.width,
+      _startDy + moved.dy / widget.frame.height,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final layer = widget.layer;
+    final frame = widget.frame;
     final fontSize = layer.size * frame.height;
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: selected
+      decoration: widget.selected
           ? BoxDecoration(
               border: Border.all(color: AppColors.primary, width: 1.5),
               borderRadius: BorderRadius.circular(6),
@@ -122,14 +152,17 @@ class _Layer extends StatelessWidget {
       width: frame.width,
       height: fontSize * 4,
       child: IgnorePointer(
-        ignoring: !interactive,
+        ignoring: !widget.interactive,
         child: GestureDetector(
           behavior: HitTestBehavior.deferToChild,
-          onTap: onTap,
-          onPanStart: (_) => onTap(),
-          onPanUpdate: (details) => onDrag(details.delta),
-          onPanEnd: (_) => onDragEnd(),
-          child: Center(child: content),
+          // Start from the touch-down point so the first slop pixels are not
+          // swallowed, which reads as a hitch at the start of every drag.
+          dragStartBehavior: DragStartBehavior.down,
+          onTap: widget.onTap,
+          onPanStart: _onPanStart,
+          onPanUpdate: _onPanUpdate,
+          onPanEnd: (_) => widget.onDragEnd(),
+          child: RepaintBoundary(child: Center(child: content)),
         ),
       ),
     );

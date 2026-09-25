@@ -47,7 +47,7 @@ class ExportScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Stack(
                 children: [
-                  Obx(() => _Preview(ctrl: ctrl)),
+                  _Preview(ctrl: ctrl),
                   Positioned(
                     top: 12,
                     right: 12,
@@ -303,7 +303,9 @@ class _Preview extends StatelessWidget {
   final ExportController ctrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final exported = ctrl.result.value;
     final decoration = BoxDecoration(
       color: Colors.grey.shade200,

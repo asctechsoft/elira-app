@@ -297,10 +297,11 @@ class ImagePipeline {
 
   /// The single matrix the canvas applies: the chosen look first, then the
   /// user's own corrections on top of it.
-  static List<double> colorMatrixFor(EditState state) => ColorMatrix.compose(
-        colorMatrix(state.adjust),
-        PhotoFilters.matrixFor(state.filter),
-      );
+  static List<double> colorMatrixFor(EditState state) =>
+      colorMatrixOf(state.adjust, state.filter);
+
+  static List<double> colorMatrixOf(AdjustParams adjust, FilterParams filter) =>
+      ColorMatrix.compose(colorMatrix(adjust), PhotoFilters.matrixFor(filter));
 
   static bool isIdentityMatrix(List<double> m) => ColorMatrix.isIdentity(m);
 

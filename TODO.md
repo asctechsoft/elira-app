@@ -207,6 +207,12 @@ Test mới: `color_matrix_test.dart` (thứ tự compose, lerp), `photo_filters_
 - [x] **Auto làm ảnh tối càng tối hơn.** Contrast xoay quanh mức xám giữa nên kéo mean xuống nhanh hơn khoảng brightness (±50%) kéo lên được. Nay Auto xin contrast tối đa rồi **lùi dần cho tới khi phơi sáng đạt** — ảnh đúng sáng quan trọng hơn ảnh đậm nét
 - [x] **3 `Obx` không theo dõi gì cả** (Adjust/Effects/Crop): thân `Obx` chỉ dựng `ListView`, còn `.value` đọc trong `itemBuilder` — chạy *sau*, ngoài scope theo dõi. Cùng đúng cái bẫy đã gặp ở mục 3, lần này test `widget_test.dart` bắt được ngay
 
+### Lỗi phát hiện khi chạy máy thật
+- [x] **Kéo text / khung crop tụt lại sau ngón tay.** Overlay cộng `details.delta` vào giá trị chụp lúc build, nhưng build chỉ chạy 1 lần/frame trong khi màn cảm ứng bắn nhiều pointer event/frame → mọi event trong cùng frame ghi đè nhau, chỉ giữ 1 delta. Test tái hiện: kéo 100px, text chỉ đi **10px**. Nay tính theo **vị trí lúc chạm + tổng quãng ngón tay đã đi** (`text_overlay.dart`, `crop_overlay.dart`, cả kéo khung lẫn 4 góc), kèm `DragStartBehavior.down` để không khựng ở đầu cú kéo
+- [x] **Mỗi tick kéo rebuild cả canvas ảnh**: `colorMatrix` dựng từ `currentState` nên canvas subscribe luôn `texts` + `geometry`. Nay chỉ đọc adjust + filter
+- [x] Bớt việc thừa mỗi tick: `updateText` notify 2 lần → 1; `TextPanel` không rebuild khi chỉ đổi vị trí; style Google Fonts cache theo font; mỗi layer có `RepaintBoundary`
+- Test: `editor_drag_test.dart` — nhiều lần move **trong cùng một frame** cho text, khung crop, góc crop, và ca đếm rebuild của canvas. Cả 4 fail trên code cũ
+
 ---
 
 ## 5. AI Studio (`screen_ai_studio/`) — ĐÃ THI CÔNG PHÍA APP

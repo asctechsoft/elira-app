@@ -26,15 +26,21 @@ class TextFont {
       ],
     );
     if (!TextFonts.allowDownloadableFonts) return _fallback(base);
-
-    return switch (id) {
-      'serif' => GoogleFonts.playfairDisplay(textStyle: base, fontWeight: FontWeight.w700),
-      'display' => GoogleFonts.bebasNeue(textStyle: base, letterSpacing: 1.5),
-      'script' => GoogleFonts.caveat(textStyle: base, fontWeight: FontWeight.w700),
-      'mono' => GoogleFonts.robotoMono(textStyle: base, fontWeight: FontWeight.w600),
-      _ => GoogleFonts.plusJakartaSans(textStyle: base, fontWeight: FontWeight.w800),
-    };
+    return base.merge(_family[id] ??= _googleFamily());
   }
+
+  /// Size- and colour-free family style, resolved once per font. Text layers
+  /// restyle on every drag and size tick; going through GoogleFonts each time
+  /// redoes its lookup and style construction for nothing.
+  static final Map<String, TextStyle> _family = {};
+
+  TextStyle _googleFamily() => switch (id) {
+        'serif' => GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700),
+        'display' => GoogleFonts.bebasNeue(letterSpacing: 1.5),
+        'script' => GoogleFonts.caveat(fontWeight: FontWeight.w700),
+        'mono' => GoogleFonts.robotoMono(fontWeight: FontWeight.w600),
+        _ => GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w800),
+      };
 
   /// Platform fonts only. Still visibly different from each other, so the
   /// picker does not collapse into five identical swatches.

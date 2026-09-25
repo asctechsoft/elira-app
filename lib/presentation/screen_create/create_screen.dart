@@ -139,7 +139,7 @@ class CreateScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
             // Recent styles: what this user actually reaches for.
-            SliverToBoxAdapter(child: Obx(() => _RecentStyles(ctrl: ctrl))),
+            SliverToBoxAdapter(child: _RecentStyles(ctrl: ctrl)),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -227,7 +227,9 @@ class _RecentStyles extends StatelessWidget {
   final CreateController ctrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     if (!ctrl.hasRecents) return const SizedBox.shrink();
     final recents = ctrl.recentTemplates;
 

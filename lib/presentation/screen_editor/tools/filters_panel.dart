@@ -44,7 +44,7 @@ class FiltersPanel extends StatelessWidget {
               onChangeEnd: (_) => ctrl.commitFilter(),
             );
           }),
-          Obx(() => _SavedLooks(ctrl: ctrl)),
+          _SavedLooks(ctrl: ctrl),
         ],
       ),
     );
@@ -158,7 +158,9 @@ class _SavedLooks extends StatelessWidget {
   final EditorController ctrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final presets = ctrl.presets.toList();
     final canSave = !ctrl.currentState.adjust.isIdentity ||
         !ctrl.currentState.filter.isIdentity ||

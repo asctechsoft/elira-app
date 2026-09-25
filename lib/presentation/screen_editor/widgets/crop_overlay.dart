@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -8,7 +9,7 @@ import 'text_overlay.dart' show fittedImageRect;
 /// The draggable crop box. It is laid out against the *displayed* image rect,
 /// not the whole canvas, so the handles stay on the photo's edges however the
 /// frame is letterboxed.
-class CropOverlay extends StatelessWidget {
+class CropOverlay extends StatefulWidget {
   const CropOverlay({super.key, required this.ctrl});
 
   final EditorController ctrl;
@@ -18,6 +19,28 @@ class CropOverlay extends StatelessWidget {
 
   /// Smallest box we let someone drag to, as a fraction of the frame.
   static const double _minSize = 0.08;
+
+  @override
+  State<CropOverlay> createState() => _CropOverlayState();
+}
+
+class _CropOverlayState extends State<CropOverlay> {
+  EditorController get ctrl => widget.ctrl;
+
+  // A drag is applied as "box at touch-down + total finger travel", never as
+  // "box from the last build + this event's delta". The build snapshot only
+  // refreshes once per frame, so with several pointer events per frame the
+  // delta approach drops all but one of them and the box lags the finger.
+  Rect _startBox = Rect.zero;
+  Offset _startPointer = Offset.zero;
+
+  void _begin(DragStartDetails details, Rect box) {
+    _startBox = box;
+    _startPointer = details.globalPosition;
+  }
+
+  Offset _travel(DragUpdateDetails details) =>
+      details.globalPosition - _startPointer;
 
   @override
   Widget build(BuildContext context) => Obx(() => _build(context));
@@ -70,8 +93,10 @@ class CropOverlay extends StatelessWidget {
               rect: box,
               child: GestureDetector(
                 behavior: HitTestBehavior.translucent,
+                dragStartBehavior: DragStartBehavior.down,
+                onPanStart: (details) => _begin(details, box),
                 onPanUpdate: (details) {
-                  var next = box.shift(details.delta);
+                  var next = _startBox.shift(_travel(details));
                   final dx = next.left < frame.left
                       ? frame.left - next.left
                       : next.right > frame.right
@@ -91,13 +116,14 @@ class CropOverlay extends StatelessWidget {
               _CornerHandle(
                 corner: corner,
                 box: box,
-                size: _handle,
-                onDrag: (delta) => update(
+                size: CropOverlay._handle,
+                onStart: (details) => _begin(details, box),
+                onDrag: (details) => update(
                   _resize(
-                    box: box,
+                    box: _startBox,
                     frame: frame,
                     corner: corner,
-                    delta: delta,
+                    delta: _travel(details),
                     ratio: ratio,
                   ),
                 ),
@@ -118,8 +144,8 @@ class CropOverlay extends StatelessWidget {
     required Offset delta,
     required double? ratio,
   }) {
-    final minW = frame.width * _minSize;
-    final minH = frame.height * _minSize;
+    final minW = frame.width * CropOverlay._minSize;
+    final minH = frame.height * CropOverlay._minSize;
 
     var left = box.left;
     var top = box.top;
@@ -183,13 +209,15 @@ class _CornerHandle extends StatelessWidget {
     required this.corner,
     required this.box,
     required this.size,
+    required this.onStart,
     required this.onDrag,
   });
 
   final _Corner corner;
   final Rect box;
   final double size;
-  final ValueChanged<Offset> onDrag;
+  final GestureDragStartCallback onStart;
+  final GestureDragUpdateCallback onDrag;
 
   @override
   Widget build(BuildContext context) {
@@ -207,7 +235,9 @@ class _CornerHandle extends StatelessWidget {
       height: size,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onPanUpdate: (details) => onDrag(details.delta),
+        dragStartBehavior: DragStartBehavior.down,
+        onPanStart: onStart,
+        onPanUpdate: onDrag,
         child: Center(
           child: Container(
             width: 18,

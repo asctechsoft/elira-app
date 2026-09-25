@@ -160,7 +160,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
-            SliverToBoxAdapter(child: Obx(() => _ContinueEditing(ctrl: ctrl))),
+            SliverToBoxAdapter(child: _ContinueEditing(ctrl: ctrl)),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
             // Popular Presets
@@ -177,7 +177,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 14)),
-            SliverToBoxAdapter(child: Obx(() => _PresetStrip(ctrl: ctrl))),
+            SliverToBoxAdapter(child: _PresetStrip(ctrl: ctrl)),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
           ],
         ),
@@ -230,7 +230,9 @@ class _ContinueEditing extends StatelessWidget {
   final HomeController ctrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     if (ctrl.isLoadingProjects.value && ctrl.recentProjects.isEmpty) {
       return const SizedBox(
         height: 130,
@@ -379,7 +381,9 @@ class _PresetStrip extends StatelessWidget {
   final HomeController ctrl;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => Obx(() => _build(context));
+
+  Widget _build(BuildContext context) {
     final presets = ctrl.presets;
     final thumbnail = ctrl.latestThumbnail;
 

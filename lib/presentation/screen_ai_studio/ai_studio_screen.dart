@@ -94,10 +94,7 @@ class AiStudioScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
                 child: Container(
-<<<<<<< HEAD
-=======
                   constraints: const BoxConstraints(minHeight: 140),
->>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
                   decoration: BoxDecoration(
                     gradient: AppColors.heroBannerGradient,
                     borderRadius: BorderRadius.circular(20),
@@ -110,11 +107,7 @@ class AiStudioScreen extends StatelessWidget {
                       const Text('IDEAS • IMAGES • MAGIC', style: TextStyle(color: Colors.white54, fontSize: 10, letterSpacing: 1)),
                       const SizedBox(height: 6),
                       const Text('Create More\nwith AI', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
-<<<<<<< HEAD
-                      const SizedBox(height: 14),
-=======
                       const SizedBox(height: 12),
->>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
                       GestureDetector(
                         onTap: () => Get.toNamed(RouteName.photoPicker),
                         child: Container(
@@ -148,26 +141,7 @@ class AiStudioScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-<<<<<<< HEAD
-                child: GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.7,
-                  ),
-                  itemCount: _tools.length,
-                  itemBuilder: (_, i) => _AiToolCard(
-                    tool: _tools[i],
-                    ctrl: ctrl,
-                    onTap: () => _startTool(_tools[i]),
-                  ),
-                ),
-=======
                 child: _ToolGrid(tools: _tools, ctrl: ctrl),
->>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
@@ -288,25 +262,8 @@ class _AiToolCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-<<<<<<< HEAD
-          Text(
-            tool.name,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary),
-          ),
-          Text(
-            tool.tagline,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 9, color: AppColors.textSecondary),
-          ),
-=======
           Text(tool.name, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 11, color: AppColors.textPrimary)),
           Text(tool.tagline, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 9, color: AppColors.textSecondary)),
->>>>>>> bf89baf9ba30c809ebbb1a451760f15224aa7a7e
         ],
       ),
     );

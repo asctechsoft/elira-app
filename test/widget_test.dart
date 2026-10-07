@@ -1,21 +1,21 @@
 // Screen-level smoke tests. These pump individual screens rather than the whole
-// EliraApp: the app's initial route is the splash, whose bootstrap pipeline owns
+// HypicApp: the app's initial route is the splash, whose bootstrap pipeline owns
 // Firebase init and a deliberate minimum duration, so pumping it leaves pending
 // timers and asserts. Screens are tested against the in-memory auth stack.
 
-import 'package:elira/controller/auth_controller.dart';
-import 'package:elira/controller/editor_controller.dart';
-import 'package:elira/controller/forgot_password_controller.dart';
-import 'package:elira/controller/login_controller.dart';
-import 'package:elira/controller/profile_controller.dart';
-import 'package:elira/data/auth/fake_auth_service.dart';
-import 'package:elira/data/user/in_memory_user_repository.dart';
-import 'package:elira/presentation/screen_auth/forgot_password_screen.dart';
-import 'package:elira/presentation/screen_auth/login_screen.dart';
-import 'package:elira/presentation/screen_editor/editor_screen.dart';
-import 'package:elira/presentation/screen_profile/profile_screen.dart';
-import 'package:elira/values/app_strings.dart';
-import 'package:elira/values/app_theme.dart';
+import 'package:hypic/controller/auth_controller.dart';
+import 'package:hypic/controller/editor_controller.dart';
+import 'package:hypic/controller/forgot_password_controller.dart';
+import 'package:hypic/controller/login_controller.dart';
+import 'package:hypic/controller/profile_controller.dart';
+import 'package:hypic/data/auth/fake_auth_service.dart';
+import 'package:hypic/data/user/in_memory_user_repository.dart';
+import 'package:hypic/presentation/screen_auth/forgot_password_screen.dart';
+import 'package:hypic/presentation/screen_auth/login_screen.dart';
+import 'package:hypic/presentation/screen_editor/editor_screen.dart';
+import 'package:hypic/presentation/screen_profile/profile_screen.dart';
+import 'package:hypic/values/app_strings.dart';
+import 'package:hypic/values/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';

@@ -87,7 +87,7 @@ $aapt = Get-ChildItem "$env:ANDROID_HOME\build-tools" -Recurse -Filter aapt2.exe
 
 Kết quả đúng: có `android.permission.INTERNET`, `package: name='com.asc.elira'`,
 `application-label:'ASC Photo AI'`. Bản dev phải ra `com.asc.elira.dev` và
-`Elira Dev`.
+`Hypic Dev`.
 
 ## Những chỗ đã phải sửa trong repo để build được
 

@@ -6,7 +6,7 @@
     "configurations": [
 
         {
-            "name": "elira-asc (NoAds Debug)",
+            "name": "hypic-asc (NoAds Debug)",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -16,7 +16,7 @@
             ]
         },
         {
-            "name": "elira-asc (Dev Debug)",
+            "name": "hypic-asc (Dev Debug)",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -26,7 +26,7 @@
             ]
         },
         {
-            "name": "elira-asc (Product Debug)",
+            "name": "hypic-asc (Product Debug)",
             "request": "launch",
             "type": "dart",
             "program": "lib/main.dart",
@@ -36,7 +36,7 @@
             ]
         },
         {
-            "name": "elira-asc (Product Release)",
+            "name": "hypic-asc (Product Release)",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release",

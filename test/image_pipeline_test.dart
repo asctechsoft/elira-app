@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/services/image_pipeline.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/services/image_pipeline.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 

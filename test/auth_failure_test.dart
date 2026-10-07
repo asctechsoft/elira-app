@@ -1,5 +1,5 @@
-import 'package:elira/data/auth/auth_failure.dart';
-import 'package:elira/values/app_strings.dart';
+import 'package:hypic/data/auth/auth_failure.dart';
+import 'package:hypic/values/app_strings.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

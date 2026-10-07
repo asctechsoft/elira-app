@@ -1,7 +1,7 @@
-import 'package:elira/controller/create_controller.dart';
-import 'package:elira/data/templates/recent_template_store.dart';
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/models/data_models/photo_template.dart';
+import 'package:hypic/controller/create_controller.dart';
+import 'package:hypic/data/templates/recent_template_store.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/models/data_models/photo_template.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 

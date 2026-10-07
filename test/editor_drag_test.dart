@@ -3,12 +3,12 @@
 // pumping in between: an overlay that adds each delta to the value it saw at
 // its last build drops all but one of those moves and lags behind the finger.
 
-import 'package:elira/controller/editor_controller.dart';
-import 'package:elira/models/data_models/text_layer.dart';
-import 'package:elira/models/ui_models/editor_tool.dart';
-import 'package:elira/presentation/screen_editor/widgets/crop_overlay.dart';
-import 'package:elira/presentation/screen_editor/widgets/text_overlay.dart';
-import 'package:elira/values/text_fonts.dart';
+import 'package:hypic/controller/editor_controller.dart';
+import 'package:hypic/models/data_models/text_layer.dart';
+import 'package:hypic/models/ui_models/editor_tool.dart';
+import 'package:hypic/presentation/screen_editor/widgets/crop_overlay.dart';
+import 'package:hypic/presentation/screen_editor/widgets/text_overlay.dart';
+import 'package:hypic/values/text_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';

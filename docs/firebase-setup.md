@@ -75,7 +75,7 @@ Thả một `google-services.json` vào bất kỳ thư mục `src/<flavor>/` n�
 hoạt ở lần build kế tiếp. Build khi chưa có file nào sẽ in ra:
 
 ```
-[elira] No google-services.json found - Firebase Android wiring is inactive.
+[hypic] No google-services.json found - Firebase Android wiring is inactive.
 ```
 
 ---

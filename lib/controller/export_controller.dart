@@ -147,7 +147,7 @@ class ExportController extends GetxController {
         final granted = await gallery.requestAccess();
         if (!granted) return false;
       }
-      await gallery.putImage(file.path, album: 'Elira');
+      await gallery.putImage(file.path, album: 'Hypic');
       return true;
     } catch (error) {
       debugPrint('[export] gallery save failed: $error');

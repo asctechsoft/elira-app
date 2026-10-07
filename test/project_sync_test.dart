@@ -1,7 +1,7 @@
-import 'package:elira/data/projects/cloud_project.dart';
-import 'package:elira/data/projects/in_memory_project_repository.dart';
-import 'package:elira/data/projects/project_sync.dart';
-import 'package:elira/models/data_models/edit_project.dart';
+import 'package:hypic/data/projects/cloud_project.dart';
+import 'package:hypic/data/projects/in_memory_project_repository.dart';
+import 'package:hypic/data/projects/project_sync.dart';
+import 'package:hypic/models/data_models/edit_project.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EditProject _project(

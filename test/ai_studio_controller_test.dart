@@ -1,17 +1,17 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:elira/controller/ai_studio_controller.dart';
-import 'package:elira/controller/auth_controller.dart';
-import 'package:elira/controller/editor_controller.dart';
-import 'package:elira/data/ai/ai_failure.dart';
-import 'package:elira/data/ai/ai_job.dart';
-import 'package:elira/data/ai/fake_ai_service.dart';
-import 'package:elira/data/auth/fake_auth_service.dart';
-import 'package:elira/data/user/in_memory_user_repository.dart';
-import 'package:elira/models/data_models/ai_tool.dart';
-import 'package:elira/models/data_models/app_user.dart';
-import 'package:elira/models/data_models/edit_project.dart';
+import 'package:hypic/controller/ai_studio_controller.dart';
+import 'package:hypic/controller/auth_controller.dart';
+import 'package:hypic/controller/editor_controller.dart';
+import 'package:hypic/data/ai/ai_failure.dart';
+import 'package:hypic/data/ai/ai_job.dart';
+import 'package:hypic/data/ai/fake_ai_service.dart';
+import 'package:hypic/data/auth/fake_auth_service.dart';
+import 'package:hypic/data/user/in_memory_user_repository.dart';
+import 'package:hypic/models/data_models/ai_tool.dart';
+import 'package:hypic/models/data_models/app_user.dart';
+import 'package:hypic/models/data_models/edit_project.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
@@ -31,7 +31,7 @@ void main() {
 
   setUp(() async {
     Get.testMode = true;
-    tmp = await Directory.systemTemp.createTemp('elira_ai_ctrl');
+    tmp = await Directory.systemTemp.createTemp('hypic_ai_ctrl');
     source = File('${tmp.path}${Platform.pathSeparator}original.jpg');
     await source.writeAsBytes(_jpeg());
 

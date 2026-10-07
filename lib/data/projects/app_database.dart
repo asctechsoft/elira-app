@@ -6,7 +6,7 @@ import 'package:sqflite/sqflite.dart';
 /// disk cannot be asked to reinstall because a column moved. [_onUpgrade] adds
 /// one `if (from < n)` block per version and never recreates a table.
 class AppDatabase {
-  AppDatabase({this.fileName = 'elira.db', this.directoryOverride});
+  AppDatabase({this.fileName = 'hypic.db', this.directoryOverride});
 
   final String fileName;
 

@@ -1,4 +1,4 @@
-import 'package:elira/services/color_matrix.dart';
+import 'package:hypic/services/color_matrix.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Matrices are built by multiplying and blending, so componentwise

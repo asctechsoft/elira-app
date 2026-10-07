@@ -1,7 +1,8 @@
 # Hợp đồng backend AI
 
 Tài liệu này mô tả **API mà server phải hiện thực** để 4 tab AI trong app chạy được.
-Phía app đã viết xong và có test: xem [`lib/data/ai/elira_ai_service.dart`](../lib/data/ai/elira_ai_service.dart).
+Phía app đã viết xong và có test: xem [`lib/data/ai/hypic_ai_service.dart`](../lib/data/ai/hypic_ai_service.dart)
+(trước đây là `elira_ai_service.dart`, đổi tên theo app).
 
 ## Vì sao phải có server, không gọi thẳng Replicate
 
@@ -22,10 +23,10 @@ tên model, không có key, không có endpoint của Replicate hay remove.bg.
 ## Cấu hình phía app
 
 ```powershell
-flutter build apk --flavor product --dart-define=ELIRA_AI_ENDPOINT=https://api.example.com
+flutter build apk --flavor product --dart-define=HYPIC_AI_ENDPOINT=https://api.example.com
 ```
 
-Không truyền `ELIRA_AI_ENDPOINT` thì `AiConfig.isConfigured == false`, app đăng ký
+Không truyền `HYPIC_AI_ENDPOINT` thì `AiConfig.isConfigured == false`, app đăng ký
 `FakeAiService(configured: false)` và mọi tab AI hiện thẳng trạng thái
 "chưa kết nối" thay vì quay vòng rồi báo lỗi khó hiểu.
 

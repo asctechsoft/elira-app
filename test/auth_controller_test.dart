@@ -1,8 +1,8 @@
-import 'package:elira/controller/auth_controller.dart';
-import 'package:elira/data/auth/auth_failure.dart';
-import 'package:elira/data/auth/fake_auth_service.dart';
-import 'package:elira/data/user/in_memory_user_repository.dart';
-import 'package:elira/models/data_models/app_user.dart';
+import 'package:hypic/controller/auth_controller.dart';
+import 'package:hypic/data/auth/auth_failure.dart';
+import 'package:hypic/data/auth/fake_auth_service.dart';
+import 'package:hypic/data/user/in_memory_user_repository.dart';
+import 'package:hypic/models/data_models/app_user.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

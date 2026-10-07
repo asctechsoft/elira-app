@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
 import '../data/ai/ai_service.dart';
-import '../data/ai/elira_ai_service.dart';
+import '../data/ai/hypic_ai_service.dart';
 import '../data/ai/fake_ai_service.dart';
 import '../data/auth/auth_service.dart';
 import '../data/auth/fake_auth_service.dart';
@@ -43,7 +43,7 @@ class ServiceLocator {
       _firebaseReady = true;
     } catch (error) {
       _firebaseReady = false;
-      debugPrint('[elira] Firebase not configured, running with in-memory auth: $error');
+      debugPrint('[hypic] Firebase not configured, running with in-memory auth: $error');
     }
   }
 
@@ -80,7 +80,7 @@ class ServiceLocator {
       );
       _registerSync();
     } catch (error) {
-      debugPrint('[elira] sqflite unavailable, projects are session-only: $error');
+      debugPrint('[hypic] sqflite unavailable, projects are session-only: $error');
       Get.put<ProjectRepository>(InMemoryProjectRepository(), permanent: true);
       Get.put<PresetRepository>(InMemoryPresetRepository(), permanent: true);
       _registerSync();
@@ -109,7 +109,7 @@ class ServiceLocator {
     );
   }
 
-  /// A build with no `ELIRA_AI_ENDPOINT` normally gets a service that reports
+  /// A build with no `HYPIC_AI_ENDPOINT` normally gets a service that reports
   /// itself as unconfigured, so the UI says "not connected" up front instead
   /// of letting every run spin and then fail. While [FeatureFlags.creditsEnabled]
   /// is off for the current demo/dev phase, it simulates locally instead so
@@ -119,14 +119,14 @@ class ServiceLocator {
     if (Get.isRegistered<AiService>()) return;
     if (AiConfig.isConfigured) {
       Get.put<AiService>(
-        EliraAiService(auth: Get.find<AuthService>()),
+        HypicAiService(auth: Get.find<AuthService>()),
         permanent: true,
       );
     } else if (!FeatureFlags.creditsEnabled) {
-      debugPrint('[elira] No ELIRA_AI_ENDPOINT: simulating AI tools locally.');
+      debugPrint('[hypic] No HYPIC_AI_ENDPOINT: simulating AI tools locally.');
       Get.put<AiService>(FakeAiService(configured: true), permanent: true);
     } else {
-      debugPrint('[elira] No ELIRA_AI_ENDPOINT: cloud AI is inactive.');
+      debugPrint('[hypic] No HYPIC_AI_ENDPOINT: cloud AI is inactive.');
       Get.put<AiService>(FakeAiService(configured: false), permanent: true);
     }
   }

@@ -1,6 +1,6 @@
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/services/color_matrix.dart';
-import 'package:elira/services/photo_filters.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/services/color_matrix.dart';
+import 'package:hypic/services/photo_filters.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 List<double> _apply(List<double> matrix) =>

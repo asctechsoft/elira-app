@@ -144,7 +144,7 @@ class ExportService {
     final dir = await getTemporaryDirectory();
     final stamp = DateTime.now().millisecondsSinceEpoch;
     final file = File(
-      '${dir.path}${Platform.pathSeparator}elira_$stamp.${request.isPng ? 'png' : 'jpg'}',
+      '${dir.path}${Platform.pathSeparator}hypic_$stamp.${request.isPng ? 'png' : 'jpg'}',
     );
     await file.writeAsBytes(bytes, flush: true);
 

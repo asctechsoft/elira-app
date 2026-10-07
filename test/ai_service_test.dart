@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:elira/data/ai/ai_failure.dart';
-import 'package:elira/data/ai/ai_job.dart';
-import 'package:elira/data/ai/elira_ai_service.dart';
-import 'package:elira/data/ai/fake_ai_service.dart';
-import 'package:elira/data/auth/auth_user.dart';
-import 'package:elira/data/auth/fake_auth_service.dart';
-import 'package:elira/models/data_models/ai_tool.dart';
+import 'package:hypic/data/ai/ai_failure.dart';
+import 'package:hypic/data/ai/ai_job.dart';
+import 'package:hypic/data/ai/hypic_ai_service.dart';
+import 'package:hypic/data/ai/fake_ai_service.dart';
+import 'package:hypic/data/auth/auth_user.dart';
+import 'package:hypic/data/auth/fake_auth_service.dart';
+import 'package:hypic/models/data_models/ai_tool.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -27,7 +27,7 @@ void main() {
   late File source;
 
   setUp(() async {
-    tmp = await Directory.systemTemp.createTemp('elira_ai_test');
+    tmp = await Directory.systemTemp.createTemp('hypic_ai_test');
     source = File('${tmp.path}${Platform.pathSeparator}src.jpg');
     await source.writeAsBytes(_jpeg());
   });
@@ -151,11 +151,11 @@ void main() {
     });
   });
 
-  group('EliraAiService', () {
+  group('HypicAiService', () {
     FakeAuthService auth() => FakeAuthService(seededUser: _user);
 
     test('reports itself unconfigured when no endpoint was built in', () {
-      final service = EliraAiService(auth: auth(), endpoint: '');
+      final service = HypicAiService(auth: auth(), endpoint: '');
       expect(service.isConfigured, isFalse);
     });
 
@@ -170,7 +170,7 @@ void main() {
         );
       });
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',
@@ -189,7 +189,7 @@ void main() {
       final client = MockClient.streaming((request, _) async =>
           http.StreamedResponse(Stream.value(utf8.encode('{}')), 402));
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',
@@ -205,7 +205,7 @@ void main() {
           http.StreamedResponse(
               Stream.value(utf8.encode('{"error":"unsupported_image"}')), 400));
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',
@@ -223,7 +223,7 @@ void main() {
         return http.StreamedResponse(Stream.value(utf8.encode('{}')), 200);
       });
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: FakeAuthService(),
         client: client,
         endpoint: 'https://api.test',
@@ -247,7 +247,7 @@ void main() {
             Stream.value(utf8.encode('{"status":"succeeded"}')), 200);
       });
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',
@@ -277,7 +277,7 @@ void main() {
         return http.StreamedResponse(Stream.value(resultBytes), 200);
       });
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',
@@ -293,7 +293,7 @@ void main() {
       final client = MockClient.streaming((request, _) async =>
           http.StreamedResponse(Stream.value(utf8.encode('not json')), 202));
 
-      final service = EliraAiService(
+      final service = HypicAiService(
         auth: auth(),
         client: client,
         endpoint: 'https://api.test',

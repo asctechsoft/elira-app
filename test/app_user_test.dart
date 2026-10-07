@@ -1,5 +1,5 @@
-import 'package:elira/data/auth/auth_user.dart';
-import 'package:elira/models/data_models/app_user.dart';
+import 'package:hypic/data/auth/auth_user.dart';
+import 'package:hypic/models/data_models/app_user.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

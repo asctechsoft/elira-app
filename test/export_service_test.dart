@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/models/data_models/text_layer.dart';
-import 'package:elira/services/export_service.dart';
-import 'package:elira/services/image_pipeline.dart';
-import 'package:elira/values/text_fonts.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/models/data_models/text_layer.dart';
+import 'package:hypic/services/export_service.dart';
+import 'package:hypic/services/image_pipeline.dart';
+import 'package:hypic/values/text_fonts.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -61,7 +61,7 @@ void main() {
   late File source;
 
   setUp(() async {
-    tmp = await Directory.systemTemp.createTemp('elira_export_test');
+    tmp = await Directory.systemTemp.createTemp('hypic_export_test');
     PathProviderPlatform.instance = _FakePathProvider(tmp.path);
     source = File('${tmp.path}${Platform.pathSeparator}original.jpg');
     await source.writeAsBytes(_photo());

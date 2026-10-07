@@ -1,4 +1,4 @@
-import 'package:elira/models/data_models/edit_operation.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EditOperation _op(EditOperationType type, Map<String, dynamic> params) =>

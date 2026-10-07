@@ -1,13 +1,13 @@
 import 'dart:io';
 
-import 'package:elira/data/presets/preset_repository.dart';
-import 'package:elira/data/projects/app_database.dart';
-import 'package:elira/data/projects/in_memory_project_repository.dart';
-import 'package:elira/data/projects/project_repository.dart';
-import 'package:elira/data/projects/sqflite_project_repository.dart';
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/models/data_models/edit_project.dart';
-import 'package:elira/models/data_models/user_preset.dart';
+import 'package:hypic/data/presets/preset_repository.dart';
+import 'package:hypic/data/projects/app_database.dart';
+import 'package:hypic/data/projects/in_memory_project_repository.dart';
+import 'package:hypic/data/projects/project_repository.dart';
+import 'package:hypic/data/projects/sqflite_project_repository.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/models/data_models/edit_project.dart';
+import 'package:hypic/models/data_models/user_preset.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -203,7 +203,7 @@ void main() {
   var counter = 0;
 
   setUp(() async {
-    tmp = await Directory.systemTemp.createTemp('elira_db_test');
+    tmp = await Directory.systemTemp.createTemp('hypic_db_test');
   });
 
   tearDown(() async {

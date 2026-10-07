@@ -1,4 +1,4 @@
-import 'package:elira/models/data_models/edit_project.dart';
+import 'package:hypic/models/data_models/edit_project.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EditProject _sample({

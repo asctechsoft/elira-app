@@ -1,4 +1,4 @@
-# Elira — Flutter AI Photo Editor
+# Hypic — Flutter AI Photo Editor
 
 ## Stack
 - Flutter 3.x / Dart SDK ^3.13.3

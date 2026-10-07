@@ -28,8 +28,8 @@ import 'ai_service.dart';
 /// charges credits inside the same transaction that accepts the job, and
 /// returns the finished image as a **short-lived signed URL** (spec 25) rather
 /// than a permanent public one.
-class EliraAiService implements AiService {
-  EliraAiService({
+class HypicAiService implements AiService {
+  HypicAiService({
     required AuthService auth,
     http.Client? client,
     String endpoint = AiConfig.endpoint,

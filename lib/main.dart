@@ -13,11 +13,11 @@ import 'values/route_name.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const EliraApp());
+  runApp(const HypicApp());
 }
 
-class EliraApp extends StatelessWidget {
-  const EliraApp({super.key});
+class HypicApp extends StatelessWidget {
+  const HypicApp({super.key});
 
   @override
   Widget build(BuildContext context) {

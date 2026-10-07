@@ -10,13 +10,13 @@ class AiConfig {
   const AiConfig._();
 
   /// Passed at build time, e.g.
-  /// `flutter build apk --flavor product --dart-define=ELIRA_AI_ENDPOINT=https://api.example.com`
+  /// `flutter build apk --flavor product --dart-define=HYPIC_AI_ENDPOINT=https://api.example.com`
   ///
   /// A `--dart-define` rather than a flavor constant because the backend URL
   /// changes between a local server, staging and production independently of
   /// which flavor is being built.
   static const String endpoint =
-      String.fromEnvironment('ELIRA_AI_ENDPOINT', defaultValue: '');
+      String.fromEnvironment('HYPIC_AI_ENDPOINT', defaultValue: '');
 
   static bool get isConfigured => endpoint.isNotEmpty;
 

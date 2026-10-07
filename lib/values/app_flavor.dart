@@ -19,7 +19,7 @@ AppFlavor get currentFlavor {
 bool get isProductFlavor => currentFlavor == AppFlavor.product;
 
 String get flavorLabel => switch (currentFlavor) {
-      AppFlavor.alpha => 'Elira Alpha',
-      AppFlavor.dev => 'Elira Dev',
+      AppFlavor.alpha => 'Hypic Alpha',
+      AppFlavor.dev => 'Hypic Dev',
       AppFlavor.product => 'ASC Photo AI',
     };

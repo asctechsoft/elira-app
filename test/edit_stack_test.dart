@@ -1,5 +1,5 @@
-import 'package:elira/models/data_models/edit_operation.dart';
-import 'package:elira/models/data_models/edit_stack.dart';
+import 'package:hypic/models/data_models/edit_operation.dart';
+import 'package:hypic/models/data_models/edit_stack.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EditOperation _adjust(String label, {double brightness = 0, double contrast = 0}) =>

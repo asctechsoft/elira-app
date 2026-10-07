@@ -43,13 +43,13 @@ android {
             dimension = "env"
             applicationIdSuffix = ".alpha"
             versionNameSuffix = "-alpha"
-            resValue("string", "app_name", "Elira Alpha")
+            resValue("string", "app_name", "Hypic Alpha")
         }
         create("dev") {
             dimension = "env"
             applicationIdSuffix = ".dev"
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "Elira Dev")
+            resValue("string", "app_name", "Hypic Dev")
         }
         create("product") {
             dimension = "env"
@@ -83,5 +83,5 @@ val flavorsWithFirebaseConfig = listOf("dev", "alpha", "product")
 if (flavorsWithFirebaseConfig.isNotEmpty() || file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 } else {
-    logger.lifecycle("[elira] No google-services.json found - Firebase Android wiring is inactive.")
+    logger.lifecycle("[hypic] No google-services.json found - Firebase Android wiring is inactive.")
 }

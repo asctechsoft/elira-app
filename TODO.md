@@ -1,4 +1,4 @@
-# Elira — TODO & Roadmap
+# Hypic — TODO & Roadmap
 
 > Cập nhật: 2026-09-24  
 > Trạng thái: **Mục 1 (Firebase & Auth), 2 (Photo Picker), 3 (Editor Core) đã thi công.** Các mục 4–10 vẫn là UI mockup (riêng Adjust Panel ở mục 4 đã xong 2/3 ý).
@@ -25,7 +25,7 @@ Dự án trước đó **không build được**. Đã sửa:
 - [x] `kotlin.incremental=false` (mọi module plugin Kotlin fail *Could not close incremental caches*)
 - [x] Tạo `android/app/proguard-rules.pro` (AGP 9 bật R8 mặc định cho release, thiếu file ⇒ build release fail)
 
-**Đã verify bằng build thật:** `--debug --flavor dev` và `--release --flavor product` đều xanh; `aapt dump` xác nhận APK release **có** quyền INTERNET, `applicationId` đúng theo flavor và label lấy từ `@string/app_name` (`ASC Photo AI` / `Elira Dev`).
+**Đã verify bằng build thật:** `--debug --flavor dev` và `--release --flavor product` đều xanh; `aapt dump` xác nhận APK release **có** quyền INTERNET, `applicationId` đúng theo flavor và label lấy từ `@string/app_name` (`ASC Photo AI` / `Hypic Dev`).
 
 > Môi trường build (JDK 21 + Android SDK, và cảnh báo Kaspersky phá toolchain): [docs/dev-setup.md](docs/dev-setup.md)
 
@@ -228,9 +228,9 @@ Test mới: `color_matrix_test.dart` (thứ tự compose, lerp), `photo_filters_
 - [x] `AiJob` + `AiJobStatus`: uploading → queued → running → downloading → succeeded/failed/cancelled
 - [x] `AiFailureCode` + map sang thông điệp người dùng (`AppStrings.aiErrors`) — chuỗi lỗi thô của nhà cung cấp không bao giờ tới mắt người dùng
 - [x] `AiService` (abstract) — **không có tên nhà cung cấp, không có key, không có model id** trong contract
-- [x] `EliraAiService`: HTTP thật tới backend của mình (submit multipart → poll → tải kết quả từ signed URL), `Authorization: Bearer <Firebase ID token>`
+- [x] `HypicAiService`: HTTP thật tới backend của mình (submit multipart → poll → tải kết quả từ signed URL), `Authorization: Bearer <Firebase ID token>`
 - [x] `FakeAiService`: chạy đủ chuỗi trạng thái, trả ảnh xử lý cục bộ, **đánh dấu `isSimulated`** để UI nói rõ đây không phải kết quả AI thật
-- [x] `AiConfig`: đọc `ELIRA_AI_ENDPOINT` từ `--dart-define`. Không có endpoint → app đăng ký `FakeAiService(configured: false)` và nói thẳng "chưa kết nối"
+- [x] `AiConfig`: đọc `HYPIC_AI_ENDPOINT` từ `--dart-define`. Không có endpoint → app đăng ký `FakeAiService(configured: false)` và nói thẳng "chưa kết nối"
 - [x] `AuthService.idToken()` thêm vào cả 3 impl — app chứng minh mình là ai, server quyết định được tiêu bao nhiêu
 
 ### Controller
